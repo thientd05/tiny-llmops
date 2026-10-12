@@ -6,5 +6,8 @@ CLAUDE*.md
 .venv/
 __pycache__/
 
+# Bản sao paper/trang web có bản quyền bên thứ ba (repo public) — chỉ giữ local; chỉ mục ở docs/references/README.md
+docs/references/files/
+
 # Dữ liệu tải về / sinh ra (build lại bằng workloads/build.py, kiểm bằng manifest.json)
 data/
