@@ -5,6 +5,61 @@
 
 ---
 
+## 2026-10-12 — P03: harness benchmark + smoke trên L4 (vLLM 0.30.0 mặc định)
+
+Báo cáo: [gd1-vllm-baseline/03-cong-cu-benchmark/bao-cao.md](gd1-vllm-baseline/03-cong-cu-benchmark/bao-cao.md).
+Kết quả thô: `results/gd1/03-cong-cu-benchmark/20261012-p03/` (`summary.md`, `units/<id>/`, `server_starts.jsonl`).
+
+| Trường | Giá trị |
+|---|---|
+| Thời gian | instance chạy 23:28:55 (12/10) → smoke xong 00:17:30 (13/10, +07); P04 chạy tiếp trên cùng máy |
+| Instance / offer | 55583011 / 49498406 |
+| Host / machine | **host 506934 / machine 116596** (cùng máy P01), $0.2833/h tổng (disk 60 GB) |
+| Phần mềm | vLLM 0.30.0 (`vllm[bench]`, thêm pandas cho `vllm bench serve`), torch 2.13.0+cu130, driver 595.84, image `nvidia/cuda:13.0.2-devel-ubuntu22.04`; chi tiết `setup/env.txt` |
+| Server | `scripts/serve_default.sh <log> --max-model-len 16384` (VLLM_SERVER_DEV_MODE=1) |
+| Client | `vllm bench serve --backend openai --endpoint /v1/completions --dataset-name custom --custom-output-len -1 --skip-chat-template --ignore-eos --temperature 0 --max-concurrency N --num-prompts max(100,4N) --seed 1000+r --no-oversample --save-detailed`; và `bench/session_client.py closed` (cùng mẫu) |
+| Trước mỗi đơn vị | warmup 4 request (16 token ra) → `POST /reset_prefix_cache` (success) |
+| Lệnh | `bash scripts/remote_bench.sh bench/configs/smoke.yaml /root/results/p03` · local: `python bench/summarize.py --config bench/configs/smoke.yaml --out <dir> --compare-clients` |
+
+**Checklist máy:** băng thông VRAM (D2D 1 GiB × 10) **231.2 GB/s**; `ncu` → `ERR_NVGPUCTRPERM`; PCIe Gen3; power limit 72 W, xung SM max 2040 MHz.
+Setup máy mới (uv + vLLM + model 16 GB song song): **186 s**.
+
+**Dung lượng KV cache theo lần khởi động** (giả thuyết P01 — đã xác nhận):
+
+| Lần | Loại | torch.compile (s) | init engine (s) | sẵn sàng (s) | KV cache |
+|---|---|---|---|---|---|
+| 1 | máy mới, compile từ đầu | 71.05 | 244.2 | 342.6 | **2.63 GiB = 28,704 token** |
+| 2 | khởi động lại, dùng cache compile | 0.56 | 52.3 | 142.3 | **3.41 GiB = 37,264 token** |
+| 3 | khởi động lại, dùng cache compile | 1.21 | 39.1 | 123.8 | 3.41 GiB = 37,264 token |
+
+→ Lần compile từ đầu cho KV ít hơn 23% (cùng máy, cùng cờ). Harness tự bật lại server nếu compile > 10 s (`recompile_restart_s`).
+
+**Smoke** (1 lần/điểm trừ W2/16; cửa sổ "all" = mọi request; "steady" = bỏ N request gửi đầu và N cuối). Lần khởi động: r1 = KV 28,704; r2, r3 = KV 37,264.
+
+| Điểm | KV (token) | TTFT p50 / p95 (s) | TTFT p95 steady (s) | TPOT p50 / p95 (ms) | tok/s ra | tok/s vào | chạy max | chờ max | KV dùng max | preempt | SLO chính |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| W1 / 16 r1 | 28,704 | 0.22 / 1.09 | 0.31 | 46.8 / 48.7 | 322 | 399 | 16 | 0 | 41% | 0 | đạt |
+| W2 / 8 r1 | 28,704 | 0.71 / 2.35 | 1.50 | 48.9 / 57.0 | 146 | 2,378 | 8 | 6 | 86% | 0 | đạt |
+| W2 / 16 r1 | 28,704 | 4.50 / 9.91 | 8.93 | 64.6 / 75.7 | 161 | 2,611 | 13 | 13 | 100% | 9 | đạt (sát) |
+| W2 / 16 r2 | 37,264 | 1.41 / 4.58 | 3.62 | 82.1 / 92.6 | 170 | 2,879 | 16 | 12 | 100% | 7 | đạt |
+| W2 / 16 r3 | 37,264 | 2.28 / 5.55 | 4.97 | 81.5 / 89.2 | 168 | 2,743 | 16 | 13 | 100% | 6 | đạt |
+| W2 / 32 r1 | 28,704 | 22.09 / 25.05 | 23.85 | 65.9 / 75.0 | 160 | 2,573 | 13 | 29 | 100% | 9 | trượt |
+| W3 / 8 r1 | 28,704 | 12.88 / 15.73 | 15.53 | 43.0 / 48.5 | 96 | 1,840 | 6 | 6 | 100% | 5 | trượt |
+
+**Kiểm tra công cụ:**
+- (a) token vào khớp **từng request** với `prompt_tokens` của P02 (mọi đơn vị), token ra = tổng `output_tokens` (ignore_eos).
+- (b) TTFT trung bình client − server (`vllm:time_to_first_token_seconds`): +17 … +33 ms (0.2–6.5%).
+- (c) trúng prefix cache W2 **21.6%** = phần system prompt chung 622 / 2,858 token (21.8%); W3 1.6% → reset có tác dụng.
+- (d) nhiễu r2 vs r3 (W2/16, cùng KV 37,264, có khởi động lại giữa hai lần), (max − min) / trung vị: tok/s ra 1.2%, TPOT p95 3.7%,
+  E2EL p50 ~9%, **TTFT p95 19% (all) / 31% (steady)**; client tự viết: TTFT p95 0.9% / 36%.
+- Client tự viết vs `vllm bench serve`, gộp r2+r3 (200 request mỗi bên): TTFT p50 +5.3%, p95 **+3.7%**, TPOT p95 +0.4%, E2EL p50 −0.5%, tok/s ra −1%.
+- GPU chạm trần công suất: 73–74.5 W, xung SM thấp nhất 975–1,140 MHz (max 2,040), nhiệt độ tối đa 73 °C.
+
+**Thời gian mỗi đơn vị** (cả warmup + reset + nạp tokenizer ~2–3 s + client): W1/16 124 s (1.24 s/request), W2/8–32 101–164 s (1.0–1.4 s/request),
+W3/8 334 s (3.3 s/request). Khởi động lại server (có cache): 124–142 s.
+
+---
+
 ## 2026-10-12 — Bộ sinh kịch bản W4 (local, không GPU)
 
 | Trường | Giá trị |

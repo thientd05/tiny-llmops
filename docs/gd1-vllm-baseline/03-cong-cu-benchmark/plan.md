@@ -85,11 +85,11 @@
 
 ## Tiêu chí xong
 
-- [ ] `bench/sweep.py`, `bench/summarize.py`, 2 file cấu hình đã commit.
-- [ ] 4 kiểm tra (a)–(d) đạt, hoặc đã có cách xử lý.
-- [ ] Đã thử: ngắt giữa chừng rồi chạy lại cùng lệnh → chỉ chạy phần còn thiếu.
-- [ ] Chế độ `search` tìm đúng điểm gãy trên server giả ở cả 3 trường hợp (trên 64, dưới 8, giữa lưới).
-- [ ] Ước lượng giờ GPU cho P04 đã cập nhật trong README GĐ1.
+- [x] `bench/sweep.py`, `bench/summarize.py`, 2 file cấu hình đã commit.
+- [x] 4 kiểm tra (a)–(d) đạt, hoặc đã có cách xử lý. (d): TTFT p95 nhiễu ~19% → xử lý ở challenges.md #5
+- [x] Đã thử: ngắt giữa chừng rồi chạy lại cùng lệnh → chỉ chạy phần còn thiếu.
+- [x] Chế độ `search` tìm đúng điểm gãy trên server giả ở cả 3 trường hợp (trên 64, dưới 8, giữa lưới).
+- [x] Ước lượng giờ GPU cho P04 đã cập nhật trong README GĐ1.
 
 ## Báo cáo P03 cần trả lời
 

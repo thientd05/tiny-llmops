@@ -64,6 +64,11 @@
 | Sweep | Một loạt lần đo thay đổi một tham số (ví dụ số user). Với số user, các mức được chọn theo lưới thích nghi, không cố định |
 | Harness | Bộ script tự động chạy đo, lưu kết quả và thông tin môi trường |
 | Warmup | Vài request gửi trước khi đo, không tính, để GPU và server vào trạng thái ổn định |
+| Đơn vị đo | Một lần đo: workload × số user × lần lặp, có ID như `w2-c16-r2`; xong thì ghi `done.json` (chứa hash cấu hình) cuối cùng |
+| Cửa sổ all / steady | Tính p95 trên mọi request của lần đo / bỏ N request gửi đầu (đợt cùng bắt đầu) và N request gửi cuối (số request đang chạy giảm dần). Dự án quyết định đạt/trượt theo "all" (P03) |
+| Nhiễu đo | Hai lần đo cùng một điểm lệch nhau bao nhiêu, tính (max − min) / trung vị. P03: throughput ~1%, TPOT ~4%, TTFT p95 ~20% |
+| Oversample | Công cụ đo tự lặp lại mẫu khi thiếu mẫu. Dự án tắt (`--no-oversample`) vì mẫu lặp trúng prefix cache |
+| Server giả | Chương trình trả lời giống vLLM nhưng không chạy model (`bench/fake_server.py`), để thử harness ở laptop |
 | Trace | Bản ghi thời điểm đến (và độ dài) của request từ hệ thống thật, dùng để phát lại |
 | Baseline | Kết quả mốc để so sánh; ở dự án này là vLLM cấu hình mặc định |
 | Roofline / % băng thông | So tốc độ thực của kernel với giới hạn phần cứng (L4: 300 GB/s băng thông bộ nhớ) |
@@ -73,6 +78,7 @@
 | Từ | Nghĩa |
 |---|---|
 | torch.compile | PyTorch biên dịch phần tính toán của model thành code GPU tối ưu hơn; lần đầu ~60 s, sau đó dùng lại cache |
+| Trần công suất (power limit) | Mức điện tối đa GPU được dùng; L4 là 72 W. Chạm trần thì GPU tự hạ xung nhịp (P03: ~1,100 MHz thay vì 2,040) |
 | JIT (biên dịch lúc chạy) | Kernel được biên dịch khi chương trình cần lần đầu, thay vì biên dịch sẵn lúc cài |
 | `ninja` | Chương trình điều phối biên dịch, FlashInfer dùng khi biên dịch JIT |
 | FlashAttention / FlashInfer | Thư viện kernel tính attention (FlashInfer còn có kernel lấy mẫu token) |

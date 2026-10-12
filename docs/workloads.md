@@ -29,6 +29,19 @@ Như vậy "N user" = N request luôn có mặt trong hệ thống. Tải này n
 **Một mức N "đạt"** khi cả TTFT p95 ≤ 10 s **và** TPOT p95 ≤ 150 ms (SLO chính, mục "SLO" bên dưới).
 Nếu đo nhiều lần lặp thì xét theo **trung vị** các lần.
 
+**p95 tính trên mọi request của lần đo (cửa sổ "all")** — chốt ở P03 (2026-10-13). Lúc bắt đầu, N request được gửi cùng lúc
+(đợt đầu, prefill dồn), và cuối lần đo số request đang chạy giảm dần. Bỏ hai đoạn này (cửa sổ "steady": bỏ N request gửi đầu và N cuối)
+làm TTFT p95 thấp hơn 5–21% khi gần ngưỡng (tới 71% khi tải nhẹ) nhưng chỉ còn ~2N mẫu, nhiễu gần gấp đôi (31–36% so với 19%).
+"all" lệch về phía thận trọng và giống cách `vllm bench serve` báo số. Harness lưu số liệu từng request nên goodput theo "steady"
+luôn được tính kèm, không cần đo thêm. Lý do và số liệu: báo cáo P03.
+
+**Nhiễu đo (P03):** cùng điểm W2 / 16 user, hai lần đo: throughput 1.2%, TPOT p95 3.7%, **TTFT p95 ~19%** (KV đầy, preemption theo cụm).
+Vì vậy ngưỡng "khác nhau > 5%" chỉ dùng cho throughput / TPOT; với TTFT/goodput, so bằng **khoảng goodput** (trung vị 3 lần lặp).
+Xem [challenges.md](challenges.md) #5.
+
+**Không đo trên lần khởi động compile từ đầu:** lần đầu trên máy mới cho KV cache ít hơn 23% (28,704 vs 37,264 token), đổi kết luận
+đạt/trượt. Harness tự khởi động lại server khi compile > 10 s ([challenges.md](challenges.md) #4).
+
 **Các bước, làm riêng cho từng workload:**
 
 1. **Lưới gốc:** đo 8, 16, 32, 64. Mức này luôn đo đủ, để mọi cấu hình có cùng đường cong so sánh được.

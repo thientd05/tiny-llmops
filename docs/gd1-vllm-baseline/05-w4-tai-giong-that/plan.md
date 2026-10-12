@@ -52,7 +52,7 @@ và tỉ lệ request ngắn/dài đổi theo từng giờ. P05 đo **vLLM mặc
 
 ## Tiêu chí xong
 
-- [ ] Client phiên đã kiểm chứng: chạy W2 / 16 user closed-loop bằng client này, lệch < 5% so với `vllm bench serve` (P03).
+- [x] Client phiên đã kiểm chứng: chạy W2 / 16 user closed-loop bằng client này, lệch < 5% so với `vllm bench serve` (P03: gộp 200 request, lệch ≤ 3.7%).
 - [ ] Goodput W4 ở peak dạng khoảng hẹp; đã chạy seed 2, peak2, normal; số tóm tắt ghi measurements.md.
 
 ## Báo cáo P05 cần trả lời

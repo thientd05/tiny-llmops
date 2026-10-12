@@ -1,0 +1,72 @@
+{
+  "client_cmd": [
+    "/root/venv/bin/python",
+    "/root/td/bench/session_client.py",
+    "closed",
+    "--dataset",
+    "/root/td/data/workloads/w2.jsonl",
+    "--concurrency",
+    "16",
+    "--num-requests",
+    "100",
+    "--seed",
+    "1001",
+    "--base-url",
+    "http://localhost:8000",
+    "--model",
+    "Qwen/Qwen3-30B-A3B-GPTQ-Int4",
+    "--out",
+    "/root/results/p03/units/w2-c16-r1-session/bench.json.gz",
+    "--ignore-eos",
+    "--temperature",
+    "0"
+  ],
+  "client_s": 110.16,
+  "config": "bench/configs/smoke.yaml",
+  "dataset": "/root/td/data/workloads/w2.jsonl",
+  "end": "2026-10-12T16:52:30.439834+00:00",
+  "git_commit": "4e59d5d+wip code-sha=03f6b525d7ab",
+  "hostname": "e8afe30ef030",
+  "machine": "host=506934 machine=116596 instance=55583011 offer=49498406",
+  "run_id": "w2-c16-r1-session",
+  "server": {
+    "cmd": "bash scripts/serve_default.sh /root/results/p03/server/start-002.log --max-model-len 16384",
+    "kv_cache_gib": 2.63,
+    "kv_cache_tokens": 28704,
+    "log": null,
+    "ready_s": 0.1,
+    "reason": "chưa chạy",
+    "reused_running_server": true,
+    "same_process_as_start": 1,
+    "start_index": 2,
+    "time": "2026-10-12T16:48:24+00:00"
+  },
+  "spec": {
+    "client": "session",
+    "concurrency": 16,
+    "dataset_sha256": "ec89089788d64d51654cdb198fdde626d2f88fe2789167ef1e8778de9915dbfe",
+    "num_requests": 100,
+    "repeat": 1,
+    "sampling": {
+      "ignore_eos": true,
+      "temperature": 0
+    },
+    "seed": 1001,
+    "server_start": "bash scripts/serve_default.sh {log} --max-model-len 16384",
+    "software": {
+      "env": "VLLM_SERVER_DEV_MODE=1",
+      "image": "nvidia/cuda:13.0.2-devel-ubuntu22.04",
+      "model": "Qwen/Qwen3-30B-A3B-GPTQ-Int4@9b534e4318b7ebc3c961a839f13eb18b1833f441",
+      "torch": "2.13.0+cu130",
+      "vllm": "0.30.0"
+    },
+    "warmup": {
+      "max_tokens": 16,
+      "requests": 4
+    },
+    "workload": "w2"
+  },
+  "spec_sha256": "01daeb2a27cc63a1c4b378807136eede9940010e76d2e39a847c14996e78f259",
+  "start": "2026-10-12T16:50:40.280916+00:00",
+  "unit_s": 112.36
+}

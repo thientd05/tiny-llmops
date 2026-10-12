@@ -1,0 +1,78 @@
+{
+  "client_cmd": [
+    "/root/venv/bin/python",
+    "/root/td/bench/session_client.py",
+    "closed",
+    "--dataset",
+    "/root/td/data/workloads/w2.jsonl",
+    "--concurrency",
+    "16",
+    "--num-requests",
+    "100",
+    "--seed",
+    "1003",
+    "--base-url",
+    "http://localhost:8000",
+    "--model",
+    "Qwen/Qwen3-30B-A3B-GPTQ-Int4",
+    "--out",
+    "/root/results/p03/units/w2-c16-r3-session/bench.json.gz",
+    "--ignore-eos",
+    "--temperature",
+    "0"
+  ],
+  "client_s": 109.17,
+  "config": "bench/configs/smoke.yaml",
+  "dataset": "/root/td/data/workloads/w2.jsonl",
+  "end": "2026-10-12T17:17:29.028506+00:00",
+  "git_commit": "4e59d5d+wip code-sha=03f6b525d7ab",
+  "hostname": "e8afe30ef030",
+  "machine": "host=506934 machine=116596 instance=55583011 offer=49498406",
+  "run_id": "w2-c16-r3-session",
+  "server": {
+    "cmd": "bash scripts/serve_default.sh /root/results/p03/server/start-003.log --max-model-len 16384",
+    "init_engine_s": 39.09,
+    "kv_cache_gib": 3.41,
+    "kv_cache_tokens": 37264,
+    "load_weights_s": 24.09,
+    "log": "server/start-003.log",
+    "max_concurrency_at": [
+      16384,
+      2.27
+    ],
+    "ready_s": 123.8,
+    "reason": "sang lần lặp r3",
+    "reused_running_server": false,
+    "start_index": 3,
+    "time": "2026-10-12T17:13:27+00:00",
+    "torch_compile_s": 1.21
+  },
+  "spec": {
+    "client": "session",
+    "concurrency": 16,
+    "dataset_sha256": "ec89089788d64d51654cdb198fdde626d2f88fe2789167ef1e8778de9915dbfe",
+    "num_requests": 100,
+    "repeat": 3,
+    "sampling": {
+      "ignore_eos": true,
+      "temperature": 0
+    },
+    "seed": 1003,
+    "server_start": "bash scripts/serve_default.sh {log} --max-model-len 16384",
+    "software": {
+      "env": "VLLM_SERVER_DEV_MODE=1",
+      "image": "nvidia/cuda:13.0.2-devel-ubuntu22.04",
+      "model": "Qwen/Qwen3-30B-A3B-GPTQ-Int4@9b534e4318b7ebc3c961a839f13eb18b1833f441",
+      "torch": "2.13.0+cu130",
+      "vllm": "0.30.0"
+    },
+    "warmup": {
+      "max_tokens": 16,
+      "requests": 4
+    },
+    "workload": "w2"
+  },
+  "spec_sha256": "ea174d6577ec5d06d103816ff35785a364176279f327e9c31c6c80670b93fdb4",
+  "start": "2026-10-12T17:15:39.861042+00:00",
+  "unit_s": 111.38
+}

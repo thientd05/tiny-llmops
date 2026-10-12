@@ -1,0 +1,97 @@
+[16:41:01] đợt mới: 10 đơn vị: w2-c16-r1, w2-c16-r1-session, w2-c8-r1, w2-c32-r1, w1-c16-r1, w3-c8-r1, w2-c16-r2, w2-c16-r2-session, w2-c16-r3, w2-c16-r3-session
+[16:41:01] server start (chưa chạy): bash scripts/serve_default.sh /root/results/p03/server/start-001.log --max-model-len 16384
+[16:46:43] server ready sau 343 s, KV cache = 28704 token
+[16:46:43] w2-c16-r1: N=16, 100 request, seed 1001, client vllm
+Traceback (most recent call last):
+  File "/root/td/bench/sweep.py", line 539, in <module>
+    main()
+  File "/root/td/bench/sweep.py", line 532, in main
+    runner.run()
+  File "/root/td/bench/sweep.py", line 304, in run
+    self.run_unit(w, n, r, client)
+  File "/root/td/bench/sweep.py", line 355, in run_unit
+    raise RuntimeError(f"{uid}: client lỗi (mã {p.returncode}):\n{tail}")
+RuntimeError: w2-c16-r1: client lỗi (mã 1):
+out_sec=0, chat_template_kwargs=None, extra_body=None, skip_tokenizer_init=False, insecure=False, plot_timeline=False, timeline_itl_thresholds='25,50', plot_dataset_stats=False)
+Traceback (most recent call last):
+  File "/root/venv/lib/python3.12/site-packages/vllm/utils/import_utils.py", line 327, in __getattr__
+    importlib.import_module(name)
+  File "/root/.local/share/uv/python/cpython-3.12.14-linux-x86_64-gnu/lib/python3.12/importlib/__init__.py", line 90, in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<frozen importlib._bootstrap>", line 1387, in _gcd_import
+  File "<frozen importlib._bootstrap>", line 1360, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 1324, in _find_and_load_unlocked
+ModuleNotFoundError: No module named 'pandas'
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/root/venv/bin/vllm", line 10, in <module>
+    sys.exit(main())
+             ^^^^^^
+  File "/root/venv/lib/python3.12/site-packages/vllm/entrypoints/cli/main.py", line 106, in main
+    args.dispatch_function(args)
+  File "/root/venv/lib/python3.12/site-packages/vllm/entrypoints/cli/benchmark/serve.py", line 22, in cmd
+    main(args)
+  File "/root/venv/lib/python3.12/site-packages/vllm/benchmarks/serve.py", line 2017, in main
+    return asyncio.run(main_async(args))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/.local/share/uv/python/cpython-3.12.14-linux-x86_64-gnu/lib/python3.12/asyncio/runners.py", line 195, in run
+    return runner.run(main)
+           ^^^^^^^^^^^^^^^^
+  File "/root/.local/share/uv/python/cpython-3.12.14-linux-x86_64-gnu/lib/python3.12/asyncio/runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/.local/share/uv/python/cpython-3.12.14-linux-x86_64-gnu/lib/python3.12/asyncio/base_events.py", line 691, in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+  File "/root/venv/lib/python3.12/site-packages/vllm/benchmarks/serve.py", line 2180, in main_async
+    input_requests = get_samples(args, tokenizer)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/venv/lib/python3.12/site-packages/vllm/benchmarks/datasets/datasets.py", line 2108, in get_samples
+    dataset = CustomDataset(
+              ^^^^^^^^^^^^^^
+  File "/root/venv/lib/python3.12/site-packages/vllm/benchmarks/datasets/datasets.py", line 2520, in __init__
+    self.load_data()
+  File "/root/venv/lib/python3.12/site-packages/vllm/benchmarks/datasets/datasets.py", line 2535, in load_data
+    jsonl_data = pd.read_json(path_or_buf=self.dataset_path, lines=True)
+                 ^^^^^^^^^^^^
+  File "/root/venv/lib/python3.12/site-packages/vllm/utils/import_utils.py", line 332, in __getattr__
+    raise ImportError(msg) from exc
+ImportError: Please install vllm[bench] for bench support
+
+[16:48:24] đợt mới: 10 đơn vị: w2-c16-r1, w2-c16-r1-session, w2-c8-r1, w2-c32-r1, w1-c16-r1, w3-c8-r1, w2-c16-r2, w2-c16-r2-session, w2-c16-r3, w2-c16-r3-session
+[16:48:24] w2-c16-r1: thư mục dở dang (không có done.json hợp lệ) → xoá, đo lại
+[16:48:24] server start (chưa chạy): bash scripts/serve_default.sh /root/results/p03/server/start-002.log --max-model-len 16384
+[16:48:24] server ready sau 0 s, KV cache = 28704 token (dùng lại server đang chạy)
+[16:48:24] w2-c16-r1: N=16, 100 request, seed 1001, client vllm
+[16:50:38] w2-c16-r1: xong sau 131 s — TTFT p95 9905 ms, TPOT p95 75.7 ms, 161 tok/s ra, lỗi 0 → ĐẠT (cửa sổ all)
+[16:50:38] w2-c16-r1-session: N=16, 100 request, seed 1001, client session
+[16:52:30] w2-c16-r1-session: xong sau 110 s — TTFT p95 11019 ms, TPOT p95 74.2 ms, 159 tok/s ra, lỗi 0 → TRƯỢT (cửa sổ all)
+[16:52:30] w2-c8-r1: N=8, 100 request, seed 1001, client vllm
+[16:54:54] w2-c8-r1: xong sau 141 s — TTFT p95 2349 ms, TPOT p95 57.0 ms, 146 tok/s ra, lỗi 0 → ĐẠT (cửa sổ all)
+[16:54:54] w2-c32-r1: N=32, 128 request, seed 1001, client vllm
+[16:57:37] w2-c32-r1: xong sau 161 s — TTFT p95 25054 ms, TPOT p95 75.0 ms, 160 tok/s ra, lỗi 0 → TRƯỢT (cửa sổ all)
+[16:57:37] w1-c16-r1: N=16, 100 request, seed 1001, client vllm
+[16:59:41] w1-c16-r1: xong sau 123 s — TTFT p95 1093 ms, TPOT p95 48.7 ms, 322 tok/s ra, lỗi 0 → ĐẠT (cửa sổ all)
+[16:59:41] w3-c8-r1: N=8, 100 request, seed 1001, client vllm
+[17:05:15] w3-c8-r1: xong sau 329 s — TTFT p95 15731 ms, TPOT p95 48.5 ms, 96 tok/s ra, lỗi 0 → TRƯỢT (cửa sổ all)
+[17:05:15] server stop: bash scripts/stop_server.sh
+server đã tắt (pid 1988)
+[17:05:17] server start (sang lần lặp r2): bash scripts/serve_default.sh /root/results/p03/server/start-002.log --max-model-len 16384
+[17:07:40] server ready sau 142 s, KV cache = 37264 token
+[17:07:40] w2-c16-r2: N=16, 100 request, seed 1002, client vllm
+[17:09:39] w2-c16-r2: xong sau 117 s — TTFT p95 4575 ms, TPOT p95 92.6 ms, 170 tok/s ra, lỗi 0 → ĐẠT (cửa sổ all)
+[17:09:39] w2-c16-r2-session: N=16, 100 request, seed 1002, client session
+[17:11:21] w2-c16-r2-session: xong sau 99 s — TTFT p95 5627 ms, TPOT p95 93.6 ms, 169 tok/s ra, lỗi 0 → ĐẠT (cửa sổ all)
+[17:11:21] server stop: bash scripts/stop_server.sh
+server đã tắt (pid 5247)
+[17:11:23] server start (sang lần lặp r3): bash scripts/serve_default.sh /root/results/p03/server/start-003.log --max-model-len 16384
+[17:13:27] server ready sau 124 s, KV cache = 37264 token
+[17:13:27] w2-c16-r3: N=16, 100 request, seed 1003, client vllm
+[17:15:37] w2-c16-r3: xong sau 128 s — TTFT p95 5551 ms, TPOT p95 89.2 ms, 168 tok/s ra, lỗi 0 → ĐẠT (cửa sổ all)
+[17:15:37] w2-c16-r3-session: N=16, 100 request, seed 1003, client session
+[17:17:29] w2-c16-r3-session: xong sau 109 s — TTFT p95 5579 ms, TPOT p95 89.5 ms, 167 tok/s ra, lỗi 0 → ĐẠT (cửa sổ all)
+[17:17:29] xong toàn bộ
+REMOTE_BENCH_DONE 2026-10-12T17:17:30+00:00

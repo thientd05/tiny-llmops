@@ -1,0 +1,27 @@
+# Thử ở LOCAL: client tự viết (session_client.py closed) vs vllm bench serve trên server giả kiểu hàng đợi.
+# Dùng trong bench/test_fake.sh closed. Cùng mẫu, cùng thứ tự (seed), cùng N → hai client phải ra số gần nhau.
+mode: grid
+repeats: 2
+seed_base: 1000
+num_requests: {min: 100, per_user: 4}
+slo: {ttft_ms: 10000, tpot_ms: 150}
+slo2: {ttft_ms: 2000, tpot_ms: 100}
+verdict_window: all
+points:
+  - {w: w2, n: 16}
+  - {w: w2, n: 16, client: session}
+workloads:
+  w2: {path: data/workloads/w2.jsonl}
+server:
+  start: "bash bench/fake_serve.sh {log} --mode queue --capacity 12 --prefill-s 0.00002 --token-s 0.002 --chunk-tokens 1"
+  stop: "bash bench/fake_serve.sh --stop"
+  base_url: http://localhost:8123
+  model: Qwen/Qwen3-30B-A3B-GPTQ-Int4
+  restart: never
+client:
+  vllm_cmd: "env VLLM_TARGET_DEVICE=cpu /home/thienta/.local/share/vllm-bench-venv/bin/vllm bench serve"
+  tokenizer: data/raw/qwen3-tokenizer
+  sampling: {temperature: 0, ignore_eos: true}
+warmup: {requests: 4, max_tokens: 16}
+software: {server: fake}
+unit_timeout_s: 600

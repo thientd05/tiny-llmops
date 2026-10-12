@@ -40,12 +40,13 @@ mark "uv_ready"
 DL_PID=$!
 
 # Cài vLLM (bỏ qua nếu venv đã có đúng phiên bản)
-installed=$("$VENV/bin/python" -c 'import importlib.metadata as m; print(m.version("vllm"))' 2>/dev/null || true)
+# [bench]: gói phụ cho `vllm bench serve` (pandas, datasets...), cần từ P03
+installed=$("$VENV/bin/python" -c 'import importlib.metadata as m, pandas; print(m.version("vllm"))' 2>/dev/null || true)
 if [ "$installed" = "$VLLM_VERSION" ]; then
   mark "vllm_already_installed"
 else
   [ -x "$VENV/bin/python" ] || uv venv -q --python 3.12 "$VENV"
-  uv pip install -q --python "$VENV/bin/python" "vllm==${VLLM_VERSION}" --torch-backend="$TORCH_BACKEND"
+  uv pip install -q --python "$VENV/bin/python" "vllm[bench]==${VLLM_VERSION}" --torch-backend="$TORCH_BACKEND"
   mark "vllm_installed"
 fi
 

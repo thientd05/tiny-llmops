@@ -1,0 +1,544 @@
+{
+  "client_compare": {
+    "w2-c16-r1": {
+      "e2el_p50_ms": {
+        "diff_pct": 0.3114573384693594,
+        "session": 14992.039507487789,
+        "vllm": 14945.490679994691
+      },
+      "output_tok_s": {
+        "diff_pct": -0.9262596166833644,
+        "session": 159.31218801913627,
+        "vllm": 160.80162856752645
+      },
+      "tpot_p50_ms": {
+        "diff_pct": -0.6204058213443482,
+        "session": 64.18305090343937,
+        "vllm": 64.58373213726037
+      },
+      "tpot_p95_ms": {
+        "diff_pct": -1.912593284888194,
+        "session": 74.20333379559672,
+        "vllm": 75.65021472238047
+      },
+      "ttft_p50_ms": {
+        "diff_pct": -2.337431780926275,
+        "session": 4399.689454992767,
+        "vllm": 4504.9905354972
+      },
+      "ttft_p95_ms": {
+        "diff_pct": 11.247799363348713,
+        "session": 11019.209707499247,
+        "vllm": 9905.103535135271
+      }
+    },
+    "w2-c16-r2": {
+      "e2el_p50_ms": {
+        "diff_pct": -0.17915623086602084,
+        "session": 14346.135520958342,
+        "vllm": 14371.88364600297
+      },
+      "output_tok_s": {
+        "diff_pct": -0.4417655704562173,
+        "session": 169.44609627322865,
+        "vllm": 170.19797231653772
+      },
+      "tpot_p50_ms": {
+        "diff_pct": 0.5284494824393652,
+        "session": 82.52291814044767,
+        "vllm": 82.08911861797196
+      },
+      "tpot_p95_ms": {
+        "diff_pct": 1.0694527081942593,
+        "session": 93.59091242571165,
+        "vllm": 92.60059287738056
+      },
+      "ttft_p50_ms": {
+        "diff_pct": 14.322083018354025,
+        "session": 1613.1832250393927,
+        "vllm": 1411.0862769884989
+      },
+      "ttft_p95_ms": {
+        "diff_pct": 22.99120970610383,
+        "session": 5627.063100069062,
+        "vllm": 4575.17501739785
+      }
+    },
+    "w2-c16-r3": {
+      "e2el_p50_ms": {
+        "diff_pct": 1.5573562113308417,
+        "session": 16018.370763980784,
+        "vllm": 15772.733124962542
+      },
+      "output_tok_s": {
+        "diff_pct": -1.0573045394222613,
+        "session": 166.69474182898963,
+        "vllm": 168.47604671878653
+      },
+      "tpot_p50_ms": {
+        "diff_pct": 0.13908312345304827,
+        "session": 81.63070824813232,
+        "vllm": 81.51733139746915
+      },
+      "tpot_p95_ms": {
+        "diff_pct": 0.4210123304583537,
+        "session": 89.52943799503917,
+        "vllm": 89.15408829022958
+      },
+      "ttft_p50_ms": {
+        "diff_pct": 6.420313121848485,
+        "session": 2426.991128537338,
+        "vllm": 2280.571309500374
+      },
+      "ttft_p95_ms": {
+        "diff_pct": 0.49001320618235866,
+        "session": 5578.629656642443,
+        "vllm": 5551.426931546302
+      }
+    }
+  },
+  "config": "bench/configs/smoke.yaml",
+  "goodput": {
+    "w1": {
+      "all": {
+        "TTFT ≤ 10 s": {
+          "hi": null,
+          "levels": [
+            16
+          ],
+          "lo": 16,
+          "monotonic": true
+        },
+        "TTFT ≤ 2 s": {
+          "hi": null,
+          "levels": [
+            16
+          ],
+          "lo": 16,
+          "monotonic": true
+        },
+        "TTFT ≤ 20 s": {
+          "hi": null,
+          "levels": [
+            16
+          ],
+          "lo": 16,
+          "monotonic": true
+        },
+        "TTFT ≤ 5 s": {
+          "hi": null,
+          "levels": [
+            16
+          ],
+          "lo": 16,
+          "monotonic": true
+        },
+        "chính": {
+          "hi": null,
+          "levels": [
+            16
+          ],
+          "lo": 16,
+          "monotonic": true
+        },
+        "phụ": {
+          "hi": null,
+          "levels": [
+            16
+          ],
+          "lo": 16,
+          "monotonic": true
+        }
+      },
+      "steady": {
+        "TTFT ≤ 10 s": {
+          "hi": null,
+          "levels": [
+            16
+          ],
+          "lo": 16,
+          "monotonic": true
+        },
+        "TTFT ≤ 2 s": {
+          "hi": null,
+          "levels": [
+            16
+          ],
+          "lo": 16,
+          "monotonic": true
+        },
+        "TTFT ≤ 20 s": {
+          "hi": null,
+          "levels": [
+            16
+          ],
+          "lo": 16,
+          "monotonic": true
+        },
+        "TTFT ≤ 5 s": {
+          "hi": null,
+          "levels": [
+            16
+          ],
+          "lo": 16,
+          "monotonic": true
+        },
+        "chính": {
+          "hi": null,
+          "levels": [
+            16
+          ],
+          "lo": 16,
+          "monotonic": true
+        },
+        "phụ": {
+          "hi": null,
+          "levels": [
+            16
+          ],
+          "lo": 16,
+          "monotonic": true
+        }
+      }
+    },
+    "w2": {
+      "all": {
+        "TTFT ≤ 10 s": {
+          "hi": 32,
+          "levels": [
+            8,
+            16,
+            32
+          ],
+          "lo": 16,
+          "monotonic": true
+        },
+        "TTFT ≤ 2 s": {
+          "hi": 8,
+          "levels": [
+            8,
+            16,
+            32
+          ],
+          "lo": null,
+          "monotonic": true
+        },
+        "TTFT ≤ 20 s": {
+          "hi": 32,
+          "levels": [
+            8,
+            16,
+            32
+          ],
+          "lo": 16,
+          "monotonic": true
+        },
+        "TTFT ≤ 5 s": {
+          "hi": 16,
+          "levels": [
+            8,
+            16,
+            32
+          ],
+          "lo": 8,
+          "monotonic": true
+        },
+        "chính": {
+          "hi": 32,
+          "levels": [
+            8,
+            16,
+            32
+          ],
+          "lo": 16,
+          "monotonic": true
+        },
+        "phụ": {
+          "hi": 8,
+          "levels": [
+            8,
+            16,
+            32
+          ],
+          "lo": null,
+          "monotonic": true
+        }
+      },
+      "steady": {
+        "TTFT ≤ 10 s": {
+          "hi": 32,
+          "levels": [
+            8,
+            16,
+            32
+          ],
+          "lo": 16,
+          "monotonic": true
+        },
+        "TTFT ≤ 2 s": {
+          "hi": 16,
+          "levels": [
+            8,
+            16,
+            32
+          ],
+          "lo": 8,
+          "monotonic": true
+        },
+        "TTFT ≤ 20 s": {
+          "hi": 32,
+          "levels": [
+            8,
+            16,
+            32
+          ],
+          "lo": 16,
+          "monotonic": true
+        },
+        "TTFT ≤ 5 s": {
+          "hi": 32,
+          "levels": [
+            8,
+            16,
+            32
+          ],
+          "lo": 16,
+          "monotonic": true
+        },
+        "chính": {
+          "hi": 32,
+          "levels": [
+            8,
+            16,
+            32
+          ],
+          "lo": 16,
+          "monotonic": true
+        },
+        "phụ": {
+          "hi": 16,
+          "levels": [
+            8,
+            16,
+            32
+          ],
+          "lo": 8,
+          "monotonic": true
+        }
+      }
+    },
+    "w3": {
+      "all": {
+        "TTFT ≤ 10 s": {
+          "hi": 8,
+          "levels": [
+            8
+          ],
+          "lo": null,
+          "monotonic": true
+        },
+        "TTFT ≤ 2 s": {
+          "hi": 8,
+          "levels": [
+            8
+          ],
+          "lo": null,
+          "monotonic": true
+        },
+        "TTFT ≤ 20 s": {
+          "hi": null,
+          "levels": [
+            8
+          ],
+          "lo": 8,
+          "monotonic": true
+        },
+        "TTFT ≤ 5 s": {
+          "hi": 8,
+          "levels": [
+            8
+          ],
+          "lo": null,
+          "monotonic": true
+        },
+        "chính": {
+          "hi": 8,
+          "levels": [
+            8
+          ],
+          "lo": null,
+          "monotonic": true
+        },
+        "phụ": {
+          "hi": 8,
+          "levels": [
+            8
+          ],
+          "lo": null,
+          "monotonic": true
+        }
+      },
+      "steady": {
+        "TTFT ≤ 10 s": {
+          "hi": 8,
+          "levels": [
+            8
+          ],
+          "lo": null,
+          "monotonic": true
+        },
+        "TTFT ≤ 2 s": {
+          "hi": 8,
+          "levels": [
+            8
+          ],
+          "lo": null,
+          "monotonic": true
+        },
+        "TTFT ≤ 20 s": {
+          "hi": null,
+          "levels": [
+            8
+          ],
+          "lo": 8,
+          "monotonic": true
+        },
+        "TTFT ≤ 5 s": {
+          "hi": 8,
+          "levels": [
+            8
+          ],
+          "lo": null,
+          "monotonic": true
+        },
+        "chính": {
+          "hi": 8,
+          "levels": [
+            8
+          ],
+          "lo": null,
+          "monotonic": true
+        },
+        "phụ": {
+          "hi": 8,
+          "levels": [
+            8
+          ],
+          "lo": null,
+          "monotonic": true
+        }
+      }
+    }
+  },
+  "noise": {
+    "w2-c16-session": {
+      "all": {
+        "e2el_p50_ms": 11.154154457685642,
+        "output_tok_s": 6.079320884931478,
+        "tpot_p50_ms": 22.4668726152182,
+        "tpot_p95_ms": 21.65497635670314,
+        "ttft_p50_ms": 114.81320212458724,
+        "ttft_p95_ms": 96.6859612928462
+      },
+      "n_repeats": 3,
+      "steady": {
+        "tpot_p95_ms": 11.44120002049553,
+        "ttft_p95_ms": 134.34124589401085
+      }
+    },
+    "w2-c16-vllm": {
+      "all": {
+        "e2el_p50_ms": 9.373057793510124,
+        "output_tok_s": 5.577257973470416,
+        "tpot_p50_ms": 21.47443516686941,
+        "tpot_p95_ms": 19.012451902172266,
+        "ttft_p50_ms": 135.66356139008482,
+        "ttft_p95_ms": 96.01006342080804
+      },
+      "n_repeats": 3,
+      "steady": {
+        "tpot_p95_ms": 14.713639156270325,
+        "ttft_p95_ms": 106.86012704126493
+      }
+    }
+  },
+  "repeats": 1,
+  "server_starts": [
+    {
+      "cmd": "bash scripts/serve_default.sh /root/results/p03/server/start-001.log --max-model-len 16384",
+      "init_engine_s": 244.17,
+      "kv_cache_gib": 2.63,
+      "kv_cache_tokens": 28704,
+      "load_weights_s": 24.41,
+      "log": "server/start-001.log",
+      "max_concurrency_at": [
+        16384,
+        1.75
+      ],
+      "ready_s": 342.6,
+      "reason": "chưa chạy",
+      "reused_running_server": false,
+      "start_index": 1,
+      "time": "2026-10-12T16:46:43+00:00",
+      "torch_compile_s": 71.05
+    },
+    {
+      "cmd": "bash scripts/serve_default.sh /root/results/p03/server/start-002.log --max-model-len 16384",
+      "kv_cache_gib": 2.63,
+      "kv_cache_tokens": 28704,
+      "log": null,
+      "ready_s": 0.1,
+      "reason": "chưa chạy",
+      "reused_running_server": true,
+      "same_process_as_start": 1,
+      "start_index": 2,
+      "time": "2026-10-12T16:48:24+00:00"
+    },
+    {
+      "cmd": "bash scripts/serve_default.sh /root/results/p03/server/start-002.log --max-model-len 16384",
+      "init_engine_s": 52.34,
+      "kv_cache_gib": 3.41,
+      "kv_cache_tokens": 37264,
+      "load_weights_s": 26.04,
+      "log": "server/start-002.log",
+      "max_concurrency_at": [
+        16384,
+        2.27
+      ],
+      "ready_s": 142.3,
+      "reason": "sang lần lặp r2",
+      "reused_running_server": false,
+      "start_index": 2,
+      "time": "2026-10-12T17:07:40+00:00",
+      "torch_compile_s": 0.56
+    },
+    {
+      "cmd": "bash scripts/serve_default.sh /root/results/p03/server/start-003.log --max-model-len 16384",
+      "init_engine_s": 39.09,
+      "kv_cache_gib": 3.41,
+      "kv_cache_tokens": 37264,
+      "load_weights_s": 24.09,
+      "log": "server/start-003.log",
+      "max_concurrency_at": [
+        16384,
+        2.27
+      ],
+      "ready_s": 123.8,
+      "reason": "sang lần lặp r3",
+      "reused_running_server": false,
+      "start_index": 3,
+      "time": "2026-10-12T17:13:27+00:00",
+      "torch_compile_s": 1.21
+    }
+  ],
+  "slo": {
+    "tpot_ms": 150,
+    "ttft_ms": 10000
+  },
+  "slo2": {
+    "tpot_ms": 100,
+    "ttft_ms": 2000
+  },
+  "total_unit_hours": 0.40948611111111116,
+  "verdict_window": "all"
+}
