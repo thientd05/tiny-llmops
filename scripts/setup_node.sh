@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 # Cài môi trường trên máy L4 thuê (image nvidia/cuda:13.0.2-devel-ubuntu22.04).
 # Cài vLLM và tải model chạy SONG SONG để giảm thời gian thuê máy.
+# Chạy lại được nhiều lần (docs/thi-nghiem-chay-tiep.md): bước nào xong rồi thì bỏ qua,
+# model tải dở thì `hf download` tải tiếp phần còn thiếu.
 #   bash setup_node.sh [OUT_DIR]      -> ghi env.txt, setup_times.txt vào OUT_DIR (mặc định /root/results/setup)
 set -euo pipefail
 
@@ -16,7 +18,7 @@ OUT=${1:-/root/results/setup}
 
 mkdir -p "$OUT"
 TIMES="$OUT/setup_times.txt"
-: > "$TIMES"
+echo "--- $(date -Is)" >> "$TIMES"   # nối thêm, không xoá lịch sử các lần chạy trước
 t0=$(date +%s)
 mark() { echo "$1 $(( $(date +%s) - t0 ))s" | tee -a "$TIMES"; }
 
@@ -37,10 +39,15 @@ mark "uv_ready"
 ) &
 DL_PID=$!
 
-# Cài vLLM
-uv venv -q --python 3.12 "$VENV"
-uv pip install -q --python "$VENV/bin/python" "vllm==${VLLM_VERSION}" --torch-backend="$TORCH_BACKEND"
-mark "vllm_installed"
+# Cài vLLM (bỏ qua nếu venv đã có đúng phiên bản)
+installed=$("$VENV/bin/python" -c 'import importlib.metadata as m; print(m.version("vllm"))' 2>/dev/null || true)
+if [ "$installed" = "$VLLM_VERSION" ]; then
+  mark "vllm_already_installed"
+else
+  [ -x "$VENV/bin/python" ] || uv venv -q --python 3.12 "$VENV"
+  uv pip install -q --python "$VENV/bin/python" "vllm==${VLLM_VERSION}" --torch-backend="$TORCH_BACKEND"
+  mark "vllm_installed"
+fi
 
 wait "$DL_PID"
 mark "all_done"

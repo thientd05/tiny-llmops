@@ -26,6 +26,11 @@
   - `nvidia-smi` mỗi 1 giây: VRAM, công suất, xung nhịp, nhiệt độ (L4 giới hạn 72 W → kiểm tra có bị hạ xung không);
   - `/metrics` của vLLM trước và sau: % KV cache đang dùng, số request bị tạm dừng do hết KV (preemption),
     tỉ lệ trúng prefix cache, số request đang chờ.
+- **Chạy tiếp được** (theo [thi-nghiem-chay-tiep.md](../../thi-nghiem-chay-tiep.md)):
+  - mỗi điểm đo (workload × số user × lần lặp) là một đơn vị, có ID tính từ cấu hình (`w2-c32-r2`), lưu ở `results/.../<ID>/`;
+  - `done.json` (chứa hash cấu hình) ghi cuối cùng; chạy lại cùng lệnh thì bỏ qua điểm đã xong, điểm dở dang bị xoá và chạy lại;
+  - `--status` in số điểm đã xong / còn lại và ước tính giờ GPU còn cần;
+  - trong phiên, local chạy vòng rsync kéo kết quả về mỗi ~2 phút.
 - **Metadata mỗi lần đo:** `run_id`, giờ bắt đầu/kết thúc, host_id/machine_id, phiên bản phần mềm, lệnh server,
   lệnh client, sha256 workload, git commit của repo.
 
@@ -38,12 +43,16 @@
 2. `bench/summarize.py`: gom JSON → bảng CSV + Markdown: throughput (token/s vào, ra), TTFT/TPOT/ITL p50/p95/p99,
    đạt SLO không, trung bình và độ lệch giữa các lần lặp.
 3. Cấu hình `bench/configs/smoke.yaml` (rút gọn) và `bench/configs/full.yaml` (cho P04).
+4. **Thử chạy tiếp ở local** bằng một server giả (trả lời ngay, không cần GPU):
+   - ngắt giữa chừng (Ctrl+C), chạy lại → chỉ chạy các điểm còn thiếu;
+   - sửa cấu hình → các điểm cũ bị chạy lại.
+   Làm phần này ở local để không tốn giờ GPU.
 
 ### B. Trên L4
 
-4. Thuê máy, chạy `setup_node.sh`, `serve_default.sh` (từ P01).
-5. Chạy `smoke.yaml`: W2 ở 8 và 32 user, W1 ở 16 user, W3 ở 8 user — mỗi điểm 1 lần; thêm 1 lần lặp cho W2 / 16 user × 2 lần.
-6. Kiểm tra công cụ:
+5. Thuê máy, chạy `setup_node.sh`, `serve_default.sh` (từ P01) trong `tmux`.
+6. Chạy `smoke.yaml`: W2 ở 8 và 32 user, W1 ở 16 user, W3 ở 8 user — mỗi điểm 1 lần; thêm 1 lần lặp cho W2 / 16 user × 2 lần.
+7. Kiểm tra công cụ:
    - (a) số token vào/ra thực tế khớp workload;
    - (b) TTFT client đo khớp số trên `/metrics` của server (lệch nhỏ, giải thích được);
    - (c) reset prefix cache có tác dụng: tỉ lệ trúng cache ≈ chỉ phần system prompt chung của W2;
@@ -52,13 +61,14 @@
      (token) của **mỗi lần khởi động** để kiểm tra giả thuyết "lần đầu compile cho KV nhỏ hơn";
    - (d) độ lệch giữa 2 lần đo cùng điểm. **Cần < 5%** thì quy tắc loại thư viện "kém hơn > 5%" mới có nghĩa;
      nếu lớn hơn → tăng số request mỗi lần đo hoặc số lần lặp.
-7. Từ thời gian thực từng điểm → chốt số request mỗi lần đo (đề xuất ban đầu: `max(100, 4 × C)`) và ước lượng giờ GPU P04.
-8. Rsync kết quả về, destroy máy (hoặc chuyển thẳng sang P04 nếu đã sẵn sàng — xem README).
+8. Từ thời gian thực từng điểm → chốt số request mỗi lần đo (đề xuất ban đầu: `max(100, 4 × C)`) và ước lượng giờ GPU P04.
+9. Rsync kết quả về, destroy máy (hoặc chuyển thẳng sang P04 nếu đã sẵn sàng — xem README).
 
 ## Tiêu chí xong
 
 - [ ] `bench/sweep.py`, `bench/summarize.py`, 2 file cấu hình đã commit.
 - [ ] 4 kiểm tra (a)–(d) đạt, hoặc đã có cách xử lý.
+- [ ] Đã thử: ngắt giữa chừng rồi chạy lại cùng lệnh → chỉ chạy phần còn thiếu.
 - [ ] Ước lượng giờ GPU cho P04 đã cập nhật trong README GĐ1.
 
 ## Báo cáo P03 cần trả lời

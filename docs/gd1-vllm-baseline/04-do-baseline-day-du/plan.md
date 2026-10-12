@@ -12,6 +12,8 @@ biết TTFT, TPOT, throughput và **goodput** (số user tối đa vẫn đạt 
 1. Thuê L4 (không interruptible; ưu tiên cùng host với P03), chạy setup + server mặc định.
 2. Chạy `bench/configs/full.yaml`: W1, W2, W3 × {8, 16, 32, 64} × 3 lần lặp = 36 lần đo,
    thứ tự xen kẽ, reset prefix cache + warmup trước mỗi lần (đã có trong harness).
+   Nếu bị dừng giữa chừng: thuê lại hoặc `start` máy, rsync `results/gd1/04-do-baseline-day-du/` từ local lên, chạy lại
+   **cùng lệnh** → chỉ đo các điểm chưa có `done.json`. Nếu sang host khác → đo lại điểm mốc W2/16 user để so hai host.
 3. Khởi động lại server giữa các lần lặp (3 lần khởi động) → nhiễu do trạng thái server cũng nằm trong độ lệch đo được.
 4. **Điểm bổ sung (nếu cần):** nếu ranh giới đạt/không đạt SLO nằm giữa hai mức (ví dụ đạt ở 16, trượt ở 32) →
    đo thêm điểm giữa (24) × 3 lần, để goodput không bị làm tròn quá thô. Tương tự giữa 32 và 64 (48).

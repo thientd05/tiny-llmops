@@ -25,10 +25,15 @@
 | **Stopped** | ❌ | ✅ (vẫn tính!) | Còn | Bật lại có thể phải **chờ** nếu người khác đang thuê GPU đó |
 | **Destroyed** | ❌ | ❌ | **Mất hết** | Không khôi phục được |
 
-**Quy tắc chọn stop hay destroy** (ví dụ máy 140GB, phí đĩa $0.20/GB/tháng ≈ $0.04/giờ khi stop; dựng lại máy mới ≈ $0.12):
+**Quy tắc (chốt 2026-10-12): mặc định `destroy`, không dùng `stop`.**
 
-- Nghỉ **< 3 giờ** (ăn trưa, họp) → **stop**
-- Nghỉ **qua đêm / nhiều ngày** → **destroy**
+- Quay lại trong **~10 phút** → để máy chạy tiếp. Máy để không tốn ~7,400 VND/giờ, nên 13 phút ≈ 1,600 VND, bằng tiền cài lại.
+- Lâu hơn → **destroy**. Cài lại máy mới: ~7 phút, ~1,600 VND (số đo P01: setup 3 phút + bật server 4 phút + tải về 21 GB $0.027).
+
+Vì sao không `stop`: lúc máy dừng, GPU được trả về cho người khác thuê. Thị trường L4 rất mỏng (~4 máy), nên khả năng quay lại
+thấy GPU bị chiếm là cao. Khi đó vẫn phải thuê máy mới và cài lại, cộng thêm tiền ổ đĩa đã trả (60 GB ≈ 440 VND/giờ).
+Máy `stop` mà bị quên thì tốn ~10,000 VND/ngày. `destroy` thì không bao giờ quên được. Chênh lệch mỗi lần chỉ vài trăm đến
+1–2 nghìn VND, nên chọn cách đơn giản và an toàn. Ổ đĩa máy thuê chỉ chứa thứ tạo lại được (vLLM, model, cache), nên destroy không mất gì quan trọng.
 
 Hết tiền → máy bị stop; **nếu không lưu thẻ, máy và dữ liệu bị xoá**. Vì vậy: code luôn ở Git, kết quả luôn rsync về máy local.
 
@@ -123,12 +128,8 @@ nvcc -arch=sm_89 /tmp/t.cu -o /tmp/t && ncu /tmp/t 2>&1 | tail -5
 # Trên máy local: kéo kết quả về
 rsync -avz -e "ssh -i ~/.ssh/vast -p <PORT>" root@<IP>:/root/results/ ./results/
 
-# Nghỉ ngắn (< 3h)
-vastai stop instance <INSTANCE_ID>
-vastai start instance <INSTANCE_ID>     # bật lại
-
-# Nghỉ dài / xong việc (CLI sẽ hỏi xác nhận; thêm -y để bỏ qua)
-vastai destroy instance <INSTANCE_ID>
+# Xong việc / nghỉ quá ~10 phút (thêm -y để không phải xác nhận)
+vastai destroy instance <INSTANCE_ID> -y
 ```
 
 Trên web: trang [Instances](https://cloud.vast.ai/instances/) có nút ⏹ (stop), ▶ (start), 🗑 (destroy).

@@ -1,6 +1,27 @@
 # Quy tắc viết báo cáo + khung báo cáo
 
-## Quy tắc viết
+Mỗi plan xong có **hai** báo cáo, đặt cạnh `plan.md`:
+
+| File | Cho ai, khi nào | Kiểu viết |
+|---|---|---|
+| `doc-ngay.md` | User **đọc ngay** sau khi plan xong | Kể lại từng bước theo thời gian, kèm lệnh thật và giải thích từng phần. Đọc đến đâu hiểu đến đó, không phải tra từ |
+| `bao-cao.md` | User đọc sau, khi cần đi sâu; tư liệu bảo vệ | Đầy đủ số liệu, phân tích, đo được / suy ra / phỏng đoán |
+
+Claude không cần đọc lại `doc-ngay.md` khi làm việc: mọi số liệu đã có trong `bao-cao.md` và measurements.md.
+
+## Quy tắc viết `doc-ngay.md`
+
+1. **Mở đầu bằng "Một câu"**: làm gì, tốn bao nhiêu, kết quả chính.
+2. **Kể theo đúng trình tự đã làm** (bước 0, 1, 2...). Mỗi bước: làm gì → lệnh thật → giải thích → kết quả thật.
+3. **Lệnh nào cũng giải thích từng phần**: bảng "phần → nghĩa", hoặc chú thích `←` ngay cạnh dòng lệnh.
+4. **Từ chuyên môn giải thích ngay tại chỗ xuất hiện đầu tiên**, trong câu, không bắt người đọc mở bảng thuật ngữ.
+   Từ nào có từ thường thay được thì dùng từ thường ("câu hỏi" thay "request", "bộ nhớ GPU" thay "VRAM").
+5. **Không ví von.** Giải thích bằng cơ chế thật và con số thật.
+6. **Lỗi và chỗ phải làm lại cũng kể**: thông báo lỗi thật → nghĩa là gì → sửa thế nào.
+7. **Cuối bài có**: dòng thời gian của phiên (nếu thuê máy), chi phí theo hoá đơn, "Rút ra điều gì", "Bước tiếp theo".
+8. Đọc riêng file này là hiểu được, không cần mở file khác.
+
+## Quy tắc viết `bao-cao.md`
 
 1. **Viết cho người hiểu kỹ thuật cơ bản nhưng chưa đọc code.** Giải thích cơ chế thật (cái gì chạy, tốn bộ nhớ/thời gian ở đâu),
    không rút gọn thành "vì nó tối ưu hơn".
@@ -12,7 +33,7 @@
 6. **Câu ngắn, mỗi đoạn một ý.** Bảng cho số liệu, chữ cho giải thích.
 7. Chuyện không như dự kiến (lỗi, phải đổi cách làm) ghi thật, kể cả khi là do mình làm sai.
 
-## Khung báo cáo (`bao-cao.md`)
+## Khung `bao-cao.md`
 
 ```markdown
 # Báo cáo P0X — <tên plan>

@@ -18,6 +18,12 @@
 | MMLU-Pro | Tập con cố định ~1000 câu, chia đều theo môn, seed ghi lại (bản đủ 12k câu quá tốn giờ GPU) |
 | Độ chính xác RAG | Chọn phần RAGBench có đáp án ngắn chấm tự động được (ví dụ số liệu trong FinQA/TAT-QA); không dùng model khác làm giám khảo ở giai đoạn này. Chốt cách chấm cụ thể khi bắt đầu plan |
 
+## Chạy tiếp được
+
+- Output tham chiếu: chia thành nhóm 100 prompt, mỗi nhóm một file + `done.json` → dừng thì mất tối đa 1 nhóm (~1 phút).
+- lm-evaluation-harness: mỗi tác vụ (GSM8K, MMLU-Pro, RAG) là một đơn vị; bật `--use_cache <file>` để lưu từng câu đã trả lời,
+  chạy lại chỉ hỏi những câu còn thiếu. File cache nằm trong thư mục kết quả nên được rsync về local cùng kết quả.
+
 ## Các bước
 
 1. **Output tham chiếu:** ~1000 prompt cố định (trộn W1/W2/W3, tách biệt khỏi phần dùng cho benchmark), greedy

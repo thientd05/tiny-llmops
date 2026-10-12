@@ -21,6 +21,9 @@ vLLM mặc định giữ SLO được không khi request đến theo thời đi�
     **Kiểm chứng trước khi dùng:** chạy client này ở chế độ số user cố định (W2, 16 user) và so với `vllm bench serve`;
     lệch < 5% mới dùng.
 
+- **Chạy tiếp được:** mỗi mức tải (30 phút) là một đơn vị có `done.json`. Không cắt nhỏ hơn, vì hàng đợi request phải liên tục
+  từ đầu đến cuối mới phản ánh đúng đột biến tải. Dừng giữa chừng → chạy lại cùng lệnh, chỉ chạy mức tải chưa xong (mất tối đa 30 phút).
+
 ## Các bước
 
 1. Ở local: chuẩn bị file trace (đoạn chọn + 2 mức tốc độ), ghép với mẫu W2; viết/kiểm tra công cụ gửi.

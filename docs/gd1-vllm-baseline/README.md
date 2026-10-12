@@ -19,8 +19,8 @@
 
 | # | Plan | Cần GPU? | Giờ GPU ước tính | Trạng thái | Báo cáo |
 |---|---|---|---|---|---|
-| P01 | [Cài vLLM và chạy thử model trên L4](01-cai-dat-chay-thu/plan.md) | Có | ~0.75 h (thực tế 0.35 h, $0.126) | **Xong** 2026-10-12 | [bao-cao.md](01-cai-dat-chay-thu/bao-cao.md) |
-| P02 | [Bộ sinh workload W1/W2/W3](02-bo-sinh-workload/plan.md) | Không | 0 | **Xong** 2026-10-12 | [bao-cao.md](02-bo-sinh-workload/bao-cao.md) |
+| P01 | [Cài vLLM và chạy thử model trên L4](01-cai-dat-chay-thu/plan.md) | Có | ~0.75 h (thực tế 0.35 h, $0.126) | **Xong** 2026-10-12 | [đọc ngay](01-cai-dat-chay-thu/doc-ngay.md) · [đầy đủ](01-cai-dat-chay-thu/bao-cao.md) |
+| P02 | [Bộ sinh workload W1/W2/W3](02-bo-sinh-workload/plan.md) | Không | 0 | **Xong** 2026-10-12 | [đọc ngay](02-bo-sinh-workload/doc-ngay.md) · [đầy đủ](02-bo-sinh-workload/bao-cao.md) |
 | P03 | [Công cụ chạy benchmark + kiểm tra rút gọn](03-cong-cu-benchmark/plan.md) | Có | ~1 h | Chưa làm | — |
 | P04 | [Đo baseline đầy đủ W1/W2/W3](04-do-baseline-day-du/plan.md) | Có | ~4 h | Chưa làm | — |
 | P05 | [Phát lại trace tải thật (BurstGPT)](05-phat-lai-trace/plan.md) | Có | ~1.25 h | Chưa làm | — |
@@ -29,6 +29,11 @@
 | | **Tổng** | | **~8.5 h ≈ 87k VND** | | |
 
 Thứ tự phụ thuộc: P01 → P02 (P02 làm song song được với P01) → P03 → P04 → P05, P06 → P07.
+
+## Chạy tiếp được khi bị dừng
+
+Mọi plan có dùng GPU tuân theo [thi-nghiem-chay-tiep.md](../thi-nghiem-chay-tiep.md): dừng giữa chừng → chạy lại cùng lệnh,
+chỉ làm phần còn dở. Vì vậy có thể `destroy` máy để làm việc khác bất kỳ lúc nào mà không mất phần đã đo (kết quả đã kéo về laptop).
 
 ## Gộp phiên thuê máy
 
@@ -44,7 +49,8 @@ docs/gd1-vllm-baseline/
   README.md                 ← file này: tổng quan + trạng thái
   mau-bao-cao.md            ← quy tắc viết + khung báo cáo
   0X-<ten-plan>/plan.md     ← plan
-  0X-<ten-plan>/bao-cao.md  ← báo cáo, viết sau khi làm xong plan
+  0X-<ten-plan>/doc-ngay.md  ← báo cáo dễ đọc, kể từng bước — ĐỌC CÁI NÀY TRƯỚC
+  0X-<ten-plan>/bao-cao.md  ← báo cáo đầy đủ số liệu, đọc sau khi cần đi sâu
 scripts/                    ← cài đặt máy, khởi động server
 workloads/                  ← code sinh workload
 bench/                      ← code chạy benchmark + tổng hợp
@@ -58,6 +64,6 @@ results/gd1/<plan>/<run_id>/← kết quả thô (JSON, log), rsync từ máy th
 ## Khi xong mỗi plan
 
 1. Cập nhật cột **Trạng thái** và **Báo cáo** ở bảng trên.
-2. Viết `bao-cao.md` theo [mau-bao-cao.md](mau-bao-cao.md).
+2. Viết **hai** báo cáo theo [mau-bao-cao.md](mau-bao-cao.md): `doc-ngay.md` (dễ đọc, kể từng bước) và `bao-cao.md` (đầy đủ).
 3. Thuật ngữ mới xuất hiện → thêm vào [../thuat-ngu.md](../thuat-ngu.md).
 4. `vastai show instances` → chắc chắn không còn máy chạy.
