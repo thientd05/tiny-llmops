@@ -38,8 +38,8 @@
 
 | Thí nghiệm | Đơn vị | Mất tối đa khi dừng |
 |---|---|---|
-| Sweep benchmark (P03, P04, tune GĐ1, GĐ2, GĐ5) | 1 điểm đo: workload × số user × lần lặp | 1 điểm đo (vài phút) |
-| Phát lại trace (P05) | 1 mức tải (30 phút). Không cắt nhỏ hơn, vì hàng đợi request phải liên tục từ đầu đến cuối | ≤ 30 phút |
+| Sweep benchmark (P03, P04, tune GĐ1, GĐ2, GĐ5) | 1 điểm đo: workload × số user × lần lặp. Mức user tiếp theo của lưới thích nghi được **tính lại từ các `done.json` đã có** (quy tắc tìm tất định), nên chạy lại cùng lệnh tự đi tiếp đúng chỗ | 1 điểm đo (vài phút) |
+| W4 tải giống thật (P05, GĐ5) | 1 lần chạy: khung giờ × k × seed (10 phút khởi động + 30 phút đo). Không cắt nhỏ hơn, vì phiên và hàng đợi phải liên tục | ≤ ~40 phút |
 | Output tham chiếu (P06) | 1 nhóm 100 prompt | ~1 phút |
 | lm-evaluation-harness (P06) | 1 tác vụ, bật `--use_cache` để lưu từng câu đã trả lời | vài câu |
 | Build workload (P02) | Cả lần build (~2 phút CPU); file dataset tải dở thì tự tải tiếp | ~2 phút |

@@ -5,6 +5,73 @@
 
 ---
 
+## 2026-10-12 — Bộ sinh kịch bản W4 (local, không GPU)
+
+| Trường | Giá trị |
+|---|---|
+| Code | `workloads/build_w4.py`, `workloads/w4_session.py`, test `workloads/test_w4_session.py` |
+| Lệnh | `.venv/bin/python workloads/build_w4.py pool` (27 s) · `... profile` · `... scenario --segment <peak\|peak2\|normal> --k <k> [--seed 1]` |
+| Kho nội dung | chat (tin nhắn người dùng ShareGPT, tiếng Anh, ≤ 1600 token) **239,548**; tài liệu RAGBench train+val (≥ 50 token) **18,921**. sha256 trong `workloads/manifest_w4.json` |
+| Tái lập | chạy `scenario --segment peak --k 10` hai lần → cùng sha256 `a200a785…` |
+
+**Khung giờ** (`profile`, req TB/giờ của phần hội thoại theo giờ trong ngày): peak **16h** (208.3), peak2 **10h** (180.1),
+normal **13h** (92.3), quiet 5h (4.0).
+
+**Kiểm tra ghép prompt** (`test_w4_session.py`): lượt 2–5 dùng lại 133/137, 453/457, 773/777, 1093/1097 token prompt lượt trước
+(chỉ khác 4 token khối `<think>` rỗng của template Qwen3); ngân sách 708 token → bỏ 3 cặp cũ, còn 656 token.
+
+**Kịch bản** (cửa sổ 10 phút khởi động + 30 phút đo, seed 1; "kỳ vọng" = k × req TB/giờ của trace ở giờ đó):
+
+| Kịch bản | Phiên (đang dở) | Request đo được | req/giờ đo / kỳ vọng | Phiên mở p50 | prompt p50 / p90 / p99 | <1k / 1–2k / 2–4k / 4–8k / ≥8k (%) | max_tokens p50 / p90 |
+|---|---|---|---|---|---|---|---|
+| peak k=1 | 17 (10) | 32 | 64 / 208 | 8 | 831 / 2766 / 3754 | 62.5 / 18.8 / 18.8 / 0 / 0 | 170 / 658 |
+| peak k=10 | 554 (218) | 957 | 1,914 / 2,083 | 199 | 404 / 2217 / 5306 | 71.8 / 16.2 / 9.5 / 2.2 / 0.3 | 174 / 700 |
+| peak k=40 | 2,203 (940) | 4,065 | 8,130 / 8,334 | 828 | 506 / 2449 / 6272 | 68.2 / 17.4 / 11.6 / 2.0 / 0.7 | 176 / 679 |
+| peak k=110 | 5,997 (2,501) | 11,065 | 22,130 / 22,917 | 2,277 | 518 / 2365 / 5368 | 68.1 / 18.3 / 11.4 / 1.8 / 0.4 | 185 / 678 |
+| peak2 k=10 | 458 (141) | 918 | 1,836 / 1,801 | 158 | 384 / 1701 / 6565 | 78.1 / 14.7 / 5.3 / 1.2 / 0.7 | 133 / 509 |
+| normal k=10 | 196 (82) | 401 | 802 / 923 | 69 | 501 / 2439 / 4948 | 64.1 / 17.7 / 15.5 / 2.5 / 0.2 | 190 / 662 |
+
+- k=1 thấp hơn kỳ vọng vì một ngày dao động lớn (cuối tuần, ngày vắng); từ k=10 sai lệch ≤ 13%.
+- Lần sinh đầu chỉ lấy phiên **bắt đầu** trong cửa sổ → peak k=10 chỉ 1,086 req/giờ (52% kỳ vọng): thiếu người đang chat dở
+  (think time dài). Đã sửa: đưa cả phiên đang dở vào (cột "đang dở").
+- Bị chặn bởi `max_model_len` 16384: 8 request ở k=110. Độ dài tin nhắn mới phải lấy ngẫu nhiên (client gốc đã cắt lịch sử): 3,864 / 11,065 ở k=110.
+
+## 2026-10-12 — Phân tích trace BurstGPT_3 (thiết kế W4, local, không GPU)
+
+| Trường | Giá trị |
+|---|---|
+| Dữ liệu | `BurstGPT_3.csv`, release v2.0, CC-BY-4.0, sha256 `2299986a…a43b8f` (đầy đủ trong script); 5,344,021 dòng, 110 ngày, Azure OpenAI (ChatGPT/GPT-4) |
+| Phần mềm | pandas 3.0.6, numpy 2.5.4 (`.venv`) |
+| Lệnh | `.venv/bin/python workloads/analyze_burstgpt.py` |
+
+Chỉ BurstGPT_3 có `Session ID` + `Elapsed time`; BurstGPT_1/2 (bản v1.1) không có.
+
+**Tổng quan:** API log (chương trình gọi, không có phiên) **95.6%**; Conversation log (người chat) 4.4% = 233,617 request.
+Thất bại (resp = 0) 7.3%. Mọi request: req p50/p90/p99 = 340 / 884 / 3482, resp = 14 / 144 / 912.
+
+**Phiên (Conversation log):**
+
+| Chỉ số | Giá trị |
+|---|---|
+| Số phiên | 55,920; lượt/phiên p50/p75/p90/p99 = 2 / 4 / 9 / 31, TB 4.18; phiên nhiều lượt 64.5% |
+| Độ dài req (token) | <1k 67.4% · 1–2k 18.9% · 2–4k 11.2% · 4–8k 2.1% · ≥8k 0.4% |
+| Độ dài resp (token) | p25/p50/p75/p90/p99 = 57 / 190 / 414 / 671 / 1068 |
+| req theo lượt, p50 (p90) | 1: 44 (311) · 2: 314 (1013) · 3: 600 (1774) · 4: 894 (2522) · 5: 1188 (3214) · 6–20: ~1200–1260 (~3100–3200) |
+| Lịch sử hội thoại | lượt sau dài hơn lượt trước 77.9%; corr(req, req_trước + resp_trước) = **0.905** → **`Request tokens` gồm lịch sử**; dừng tăng từ lượt ~5 (p50 ~1.2k) → nghi phía client cắt bớt lịch sử |
+| Think time (s) = ts − (ts_trước + elapsed_trước) | p10/p25/p50/p75/p90/p95 = 17 / 38 / **124** / 526 / 2330 / 7232 |
+
+**Tải hội thoại theo thời gian:**
+
+| Chỉ số | Giá trị |
+|---|---|
+| req/giờ | p10/p50/p90/p95/p99 = 3 / 59 / 216 / **293** / 413; max 509; p95/p50 = 5.0 |
+| req/phút | p50/p90/p99 = 1 / 4 / 9; max 28 |
+| Theo giờ trong ngày (req TB/giờ) | 3–7h: 4–10 · **9–11h: 116–182** · **12h: 69** · **14–17h: 168–210** · 18–23h: 76–117 → nhịp giờ hành chính, có nghỉ trưa |
+| % request ≥ 2k token mỗi giờ (1432 giờ có ≥50 req) | p10/p50/p90 = 5 / 13 / 25 % → tỉ lệ dài/ngắn đổi mạnh theo giờ |
+| Giờ đại diện | p10 ≈ 3 req/giờ (#27); p50 ≈ 59 (#45); p95 ≈ 293 (#1529, ngày 63, 17h) |
+
+**API log:** req/giờ p10/p50/p95/p99 = 0 / 159 / 9306 / 22052, max 45,454 → đột biến cực mạnh (max/p50 ~290×), không có phiên.
+
 ## 2026-10-12 — P01: cài vLLM 0.30.0 và chạy thử Qwen3-30B-A3B-GPTQ-Int4 trên L4
 
 Báo cáo: [gd1-vllm-baseline/01-cai-dat-chay-thu/bao-cao.md](gd1-vllm-baseline/01-cai-dat-chay-thu/bao-cao.md).

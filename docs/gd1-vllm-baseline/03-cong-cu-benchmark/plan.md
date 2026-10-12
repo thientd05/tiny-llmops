@@ -16,12 +16,21 @@
 - **Client chạy trên chính máy thuê**, gọi `localhost`. Gọi từ Việt Nam sang máy ở Czechia sẽ cộng thêm ~200 ms
   thời gian mạng vào TTFT → sai.
 - **Chế độ tải:** số user đồng thời cố định (`--max-concurrency C`, gửi request mới ngay khi có request xong).
-  Chế độ theo thời gian thực của trace để ở P05.
+  Thêm **client phiên cho W4** (dùng ở P05): đọc file kịch bản `build_w4.py`, lượt đầu gửi đúng `start_s`, lượt sau gửi khi lượt
+  trước nhận xong + `think_s`, prompt ghép bằng `workloads/w4_session.assemble`, stream để đo TTFT/TPOT, chỉ tính request gửi trong
+  cửa sổ đo. Kiểm chứng: chạy W2 / 16 user closed-loop bằng client này, lệch < 5% so với `vllm bench serve` mới dùng.
+- **Chọn các mức N:** không dùng danh sách cố định. Harness tự tìm goodput theo
+  [workloads.md — Cách tìm goodput](../../workloads.md#cách-tìm-goodput-lưới-thích-nghi): lưới gốc 8/16/32/64,
+  nhân đôi lên nếu 64 vẫn đạt, chia xuống 4/2 nếu 8 trượt, rồi tìm nhị phân tới `hi − lo ≤ max(2, 10% × lo)`.
+  Có cả chế độ khởi đầu nóng (từ `lo`/`hi` của cấu hình trước) cho các sweep rút gọn khi tune.
 - **Trước mỗi lần đo:**
   1. gọi `/reset_prefix_cache` (xoá bộ nhớ đệm prefix của lần trước, tránh lần sau được lợi);
   2. gửi vài request khởi động (warmup), không tính vào kết quả.
 - **Tham số chính:** `--backend openai-chat`, dataset từ P02, `--ignore-eos`, `temperature=0`,
-  `--percentile-metrics ttft,tpot,itl,e2el --metric-percentiles 50,95,99`, `--goodput ttft:2000 tpot:100`, `--save-result`.
+  `--percentile-metrics ttft,tpot,itl,e2el --metric-percentiles 50,95,99`, `--goodput ttft:10000 tpot:150`, `--save-result`,
+  và lưu số liệu **từng request** (cờ kiểu `--save-detailed`, kiểm tên cờ ở bản đã ghim). Cần số liệu từng request để
+  `summarize.py` tính lại đạt/trượt theo SLO phụ (2 s / 100 ms) và theo các ngưỡng TTFT khác (phân tích độ nhạy) mà không đo lại.
+  SLO và lý do: [workloads.md — SLO](../../workloads.md#slo).
 - **Ghi song song trong lúc đo:**
   - `nvidia-smi` mỗi 1 giây: VRAM, công suất, xung nhịp, nhiệt độ (L4 giới hạn 72 W → kiểm tra có bị hạ xung không);
   - `/metrics` của vLLM trước và sau: % KV cache đang dùng, số request bị tạm dừng do hết KV (preemption),
@@ -38,14 +47,24 @@
 
 ### A. Ở máy local
 
-1. `bench/sweep.py`: đọc file cấu hình (YAML) → chạy lần lượt các điểm đo; mỗi điểm lưu vào `results/.../<run_id>/`.
-   Thứ tự chạy **xen kẽ** giữa các lần lặp (không chạy 3 lần liên tiếp cùng một điểm) để giảm ảnh hưởng của nhiệt độ GPU theo thời gian.
+1. `bench/sweep.py`: đọc file cấu hình (YAML) → chạy các điểm đo; mỗi điểm lưu vào `results/.../<run_id>/`.
+   - Hai chế độ: `grid` (danh sách N cho trước, dùng cho smoke) và `search` (tìm goodput như trên).
+   - `search` chạy theo **đợt**. Mỗi đợt gồm các điểm đã biết cần đo của mọi workload. Trong một đợt, thứ tự chạy
+     **xen kẽ** giữa các lần lặp (không chạy 3 lần liên tiếp cùng một điểm) để giảm ảnh hưởng của nhiệt độ GPU theo thời gian.
+     Hết đợt thì tính `lo`/`hi` từ kết quả, rồi sinh đợt kế tiếp.
+   - Điểm tiếp theo tính lại từ các `done.json` đã có (tất định) → dừng giữa chừng rồi chạy lại cùng lệnh sẽ đi tiếp đúng chỗ.
+   - **Báo lỗi** nếu số request một lần đo vượt số mẫu khác nhau của workload. Không tự lặp mẫu, vì sẽ trúng prefix cache.
+   - Có trần an toàn `N ≤ 1024`. Chạm trần thì dừng và báo, không lặp vô hạn.
 2. `bench/summarize.py`: gom JSON → bảng CSV + Markdown: throughput (token/s vào, ra), TTFT/TPOT/ITL p50/p95/p99,
-   đạt SLO không, trung bình và độ lệch giữa các lần lặp.
+   đạt SLO không, trung bình và độ lệch giữa các lần lặp, **goodput dạng khoảng (`lo`, `hi`) mỗi workload**
+   theo SLO chính (10 s / 150 ms) và SLO phụ (2 s / 100 ms), cùng bảng goodput theo ngưỡng TTFT 2 / 5 / 10 / 20 s.
 3. Cấu hình `bench/configs/smoke.yaml` (rút gọn) và `bench/configs/full.yaml` (cho P04).
 4. **Thử chạy tiếp ở local** bằng một server giả (trả lời ngay, không cần GPU):
    - ngắt giữa chừng (Ctrl+C), chạy lại → chỉ chạy các điểm còn thiếu;
-   - sửa cấu hình → các điểm cũ bị chạy lại.
+   - sửa cấu hình → các điểm cũ bị chạy lại;
+   - **kiểm tra logic tìm goodput:** cho server giả một "sức chứa" đặt trước (ví dụ chạy tối đa K request cùng lúc,
+     dư thì xếp hàng). Thử ba trường hợp: K lớn (điểm gãy > 64, phải nhân đôi lên), K nhỏ (điểm gãy < 8, phải chia xuống),
+     K giữa hai mức lưới. Cả ba phải tìm ra đúng khoảng chứa điểm gãy. Ngắt giữa lúc đang tìm nhị phân, chạy lại phải đi tiếp đúng điểm.
    Làm phần này ở local để không tốn giờ GPU.
 
 ### B. Trên L4
@@ -69,6 +88,7 @@
 - [ ] `bench/sweep.py`, `bench/summarize.py`, 2 file cấu hình đã commit.
 - [ ] 4 kiểm tra (a)–(d) đạt, hoặc đã có cách xử lý.
 - [ ] Đã thử: ngắt giữa chừng rồi chạy lại cùng lệnh → chỉ chạy phần còn thiếu.
+- [ ] Chế độ `search` tìm đúng điểm gãy trên server giả ở cả 3 trường hợp (trên 64, dưới 8, giữa lưới).
 - [ ] Ước lượng giờ GPU cho P04 đã cập nhật trong README GĐ1.
 
 ## Báo cáo P03 cần trả lời
@@ -76,4 +96,5 @@
 1. Công cụ đo những chỉ số nào, mỗi chỉ số được tính từ đâu (client hay server), vì sao tin được.
 2. Nhiễu giữa 2 lần đo là bao nhiêu % → chênh lệch nhỏ nhất có thể khẳng định là khác biệt thật.
 3. Kết quả sơ bộ đầu tiên (chưa phải baseline chính thức): TTFT/TPOT ở vài điểm, có thấy dấu hiệu hết KV cache không.
-4. Mỗi lần đo mất bao lâu → P04 cần bao nhiêu giờ GPU.
+4. Mỗi lần đo mất bao lâu → P04 cần bao nhiêu giờ GPU. Lưu ý số điểm của P04 không cố định
+   (lưới gốc + mở rộng + tìm nhị phân), nên ước theo dự đoán điểm gãy từ kết quả smoke.

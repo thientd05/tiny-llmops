@@ -9,7 +9,7 @@ Gom kết quả P01–P06 thành **một trang mốc baseline** dùng cho cả �
 ## Các bước
 
 1. **Bảng mốc baseline** (đặt trong báo cáo P07, tóm tắt vào measurements.md):
-   goodput W1/W2/W3, throughput ở từng mức user, TTFT/TPOT p95, kết quả trace (P05), điểm chất lượng (P06).
+   goodput W1/W2/W3, throughput ở từng mức user, TTFT/TPOT p95, goodput W4 tải giống thật (P05) + chi phí cả ngày, điểm chất lượng (P06).
 2. **Chi phí VND / 1 triệu token output** cho từng workload, tại mức goodput:
    `giá thuê thực tế (VND/giờ, gồm ổ đĩa + băng thông) ÷ số triệu token output sinh được mỗi giờ`.
    Ghi rõ giá thuê lấy từ đâu (hoá đơn Vast của các phiên đã chạy).

@@ -22,11 +22,11 @@
 | P01 | [Cài vLLM và chạy thử model trên L4](01-cai-dat-chay-thu/plan.md) | Có | ~0.75 h (thực tế 0.35 h, $0.126) | **Xong** 2026-10-12 | [đọc ngay](01-cai-dat-chay-thu/doc-ngay.md) · [đầy đủ](01-cai-dat-chay-thu/bao-cao.md) |
 | P02 | [Bộ sinh workload W1/W2/W3](02-bo-sinh-workload/plan.md) | Không | 0 | **Xong** 2026-10-12 | [đọc ngay](02-bo-sinh-workload/doc-ngay.md) · [đầy đủ](02-bo-sinh-workload/bao-cao.md) |
 | P03 | [Công cụ chạy benchmark + kiểm tra rút gọn](03-cong-cu-benchmark/plan.md) | Có | ~1 h | Chưa làm | — |
-| P04 | [Đo baseline đầy đủ W1/W2/W3](04-do-baseline-day-du/plan.md) | Có | ~4 h | Chưa làm | — |
-| P05 | [Phát lại trace tải thật (BurstGPT)](05-phat-lai-trace/plan.md) | Có | ~1.25 h | Chưa làm | — |
+| P04 | [Đo baseline đầy đủ W1/W2/W3](04-do-baseline-day-du/plan.md) (lưới thích nghi + tìm nhị phân goodput) | Có | ~6.5 h | Chưa làm | — |
+| P05 | [W4: tải giống thật (phiên người dùng BurstGPT)](05-w4-tai-giong-that/plan.md) | Có | ~6.5 h | Chưa làm | — |
 | P06 | [Chất lượng baseline + output tham chiếu](06-chat-luong-baseline/plan.md) | Có | ~1.5 h | Chưa làm | — |
 | P07 | [Tổng hợp baseline, cập nhật kế hoạch](07-tong-hop-baseline/plan.md) | Không | 0 | Chưa làm | — |
-| | **Tổng** | | **~8.5 h ≈ 87k VND** | | |
+| | **Tổng** | | **~16.25 h ≈ 166k VND** | | |
 
 Thứ tự phụ thuộc: P01 → P02 (P02 làm song song được với P01) → P03 → P04 → P05, P06 → P07.
 
@@ -38,7 +38,8 @@ chỉ làm phần còn dở. Vì vậy có thể `destroy` máy để làm việ
 ## Gộp phiên thuê máy
 
 - **Phiên 1:** P01 riêng — ngắn, để phát hiện sớm vấn đề cài đặt trước khi viết nhiều code.
-- **Phiên 2:** P03 → P04 (cùng máy, khỏi tải lại model). P05, P06 làm tiếp nếu còn thời gian, hoặc phiên 3.
+- **Phiên 2:** P03 → P04 (cùng máy, khỏi tải lại model).
+- **Phiên 3:** P05 (W4, ~6.5 h, mỗi lần chạy ~40 phút) → P06.
 - Báo cáo viết **sau khi** đã rsync kết quả về máy local và đã tắt máy — không giữ máy chạy trong lúc viết.
 - Cố gắng đo P03–P06 trên **cùng một host**; nếu buộc phải đổi host, chạy lại 1 điểm đo chuẩn (W2, 16 user) để so hai host.
 

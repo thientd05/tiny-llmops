@@ -43,15 +43,25 @@
 | Từ | Nghĩa |
 |---|---|
 | Concurrency (số user đồng thời) | Số request đang được phục vụ cùng lúc; xong một cái thì gửi cái mới |
+| Closed-loop (tải vòng kín) | Kiểu đo đặt cố định N client; mỗi client gửi request, chờ xong rồi mới gửi tiếp. Số request trong hệ thống luôn là N; req/s và latency là kết quả đo được. P03/P04 dùng kiểu này |
+| Open-loop (tải vòng hở) | Kiểu đo đặt cố định tốc độ request đến (req/s), không chờ request trước xong. Quá tải thì hàng đợi tăng mãi |
+| Partly-open | Người dùng đến theo nhịp riêng (open), nhưng trong một phiên thì chờ câu trả lời xong, nghỉ, rồi mới hỏi tiếp (closed). Gần thực tế nhất; W4 dùng kiểu này |
+| Phiên (session) | Một cuộc hội thoại gồm nhiều lượt hỏi–đáp; lượt sau mang theo lịch sử các lượt trước |
+| Think time | Thời gian **người dùng** đọc và nghỉ, từ lúc nhận xong câu trả lời tới lúc gửi câu tiếp theo (không phải chế độ thinking của model) |
+| Chồng phiên | Cách tăng tải W4: phát chồng các phiên của cùng khung giờ từ k ngày khác nhau của trace → k lần số người dùng, giữ nguyên think time |
+| Điểm gãy (knee) | Mức N mà TTFT hoặc TPOT p95 bắt đầu vượt SLO |
+| Lưới thích nghi + tìm nhị phân | Cách tìm goodput: đo lưới gốc 8/16/32/64, nhân đôi lên hoặc chia đôi xuống nếu chưa thấy điểm gãy, rồi chia đôi khoảng giữa mức đạt và mức trượt. Chi tiết: [workloads.md](workloads.md#cách-tìm-goodput-lưới-thích-nghi) |
+| Hiệu ứng trần | Kết quả bị chặn ở biên vùng đo (ví dụ "≥ 64") → hai cấu hình khác nhau trông như bằng nhau |
 | TTFT (Time To First Token) | Thời gian từ lúc gửi request tới lúc nhận token đầu tiên. Chủ yếu do chờ hàng đợi + prefill |
 | TPOT (Time Per Output Token) | Thời gian trung bình giữa các token output sau token đầu, của một request |
 | ITL (Inter-Token Latency) | Khoảng thời gian giữa hai token liên tiếp (từng khoảng, không lấy trung bình theo request) |
 | E2EL | Tổng thời gian một request, từ gửi tới nhận token cuối |
-| p50 / p95 / p99 | Giá trị mà 50% / 95% / 99% số request nhỏ hơn hoặc bằng. p95 TTFT < 2 s = 95% request có TTFT dưới 2 s |
-| SLO | Mức độ trễ cam kết với người dùng. Dự án dùng: TTFT p95 < 2 s, TPOT p95 < 100 ms |
-| Goodput | Số user đồng thời tối đa trên 1 GPU mà vẫn đạt SLO |
+| p50 / p95 / p99 | Giá trị mà 50% / 95% / 99% số request nhỏ hơn hoặc bằng. p95 TTFT ≤ 10 s = 95% request có TTFT không quá 10 s |
+| SLO | Mức độ trễ cam kết với người dùng. Dự án dùng SLO chính TTFT p95 ≤ 10 s, TPOT p95 ≤ 150 ms (căn cứ: nghiên cứu người dùng + tốc độ đọc, xem [workloads.md](workloads.md#slo)); SLO phụ 2 s / 100 ms để so sánh |
+| Phân tích độ nhạy | Tính lại kết quả với nhiều giá trị của một giả định (ví dụ ngưỡng TTFT 2/5/10/20 s) để xem kết luận có đổi không |
+| Goodput | Số user đồng thời tối đa trên 1 GPU mà vẫn đạt SLO. Báo cáo dạng khoảng: `lo` (mức đạt lớn nhất), kèm `hi` (mức trượt nhỏ nhất) |
 | Throughput | Số token xử lý được mỗi giây (tính riêng token vào và token ra) |
-| Sweep | Một loạt lần đo thay đổi một tham số (ví dụ số user 8 → 64) |
+| Sweep | Một loạt lần đo thay đổi một tham số (ví dụ số user). Với số user, các mức được chọn theo lưới thích nghi, không cố định |
 | Harness | Bộ script tự động chạy đo, lưu kết quả và thông tin môi trường |
 | Warmup | Vài request gửi trước khi đo, không tính, để GPU và server vào trạng thái ổn định |
 | Trace | Bản ghi thời điểm đến (và độ dài) của request từ hệ thống thật, dùng để phát lại |

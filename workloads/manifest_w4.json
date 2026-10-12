@@ -1,0 +1,37 @@
+{
+  "seed": 20261012,
+  "pool": {
+    "chat": {
+      "path": "data/workloads/w4_pool/chat.jsonl",
+      "n": 239548,
+      "sha256": "37348d3f7a8e5f61452d0aeedb8aba3861803e160f06d6c2f4fe594c2221bfc1"
+    },
+    "docs": {
+      "path": "data/workloads/w4_pool/docs.jsonl",
+      "n": 18921,
+      "sha256": "997ba6b584c3c3da3e2b196a70a180a5c872b537244c129aa8313d0760580a61"
+    }
+  },
+  "sources": {
+    "tokenizer": {
+      "repo": "Qwen/Qwen3-30B-A3B-GPTQ-Int4",
+      "revision": "9b534e4318b7ebc3c961a839f13eb18b1833f441"
+    },
+    "ragbench": {
+      "repo": "galileo-ai/ragbench (trước là rungalileo/ragbench)",
+      "revision": "97808f3e5fd16ede40bbff6c2949af8139b2eb7b",
+      "license": "CC-BY-4.0 (dataset thành phần có license riêng)"
+    },
+    "sharegpt": {
+      "repo": "anon8231489123/ShareGPT_Vicuna_unfiltered",
+      "file": "ShareGPT_V3_unfiltered_cleaned_split.json",
+      "revision": "192ab2185289094fc556ec8ce5ce1e8e587154ca",
+      "license": "apache-2.0 (nội dung từ ShareGPT, chỉ dùng nghiên cứu)"
+    },
+    "burstgpt": {
+      "url": "https://github.com/HPMLL/BurstGPT/releases/download/v2.0/BurstGPT_3.csv",
+      "sha256": "2299986a07388aa303ec2c41d1131e756db650a39ed6ef9dfe7cc3d7f9a43b8f",
+      "license": "CC-BY-4.0"
+    }
+  }
+}
