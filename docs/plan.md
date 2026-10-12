@@ -17,7 +17,7 @@
 |---|---|
 | Sweep rút gọn (3 mức concurrency, 1 lần) | ~0.5 |
 | Sweep đầy đủ (W1+W2+W3, 4 mức, ×3 lần lặp + 1h replay BurstGPT) | ~5 |
-| Bộ đo chất lượng (VMLU, GSM8K, RAG accuracy, token-match/KL) | ~1 |
+| Bộ đo chất lượng (MMLU-Pro, GSM8K, RAG accuracy, token-match/KL) | ~1 |
 | 1 vòng lặp kernel (compile + unit test + microbench + profile) | ~0.25 |
 | Setup 1 phiên máy mới | ~0.25 |
 
@@ -27,7 +27,7 @@ Kịch bản **A**: mọi thư viện thua vLLM. Kịch bản **B**: 1 thư vi�
 
 | GĐ | Nội dung | A | B |
 |---|---|---|---|
-| 0 | Chuẩn bị máy, harness, dataset (embed corpus TVPL) | ~3 | ~3 |
+| 0 | Chuẩn bị máy, harness, bộ sinh workload (RAGBench có sẵn context → không cần embed) | ~3 | ~3 |
 | 1 | Tune vLLM tối đa: tune config MoE (2h), ~20 sweep rút gọn dò tham số, sweep đầy đủ cho bản mặc định + bản tune, chất lượng | ~24 | ~24 |
 | 2 | Sàng lọc: SGLang ~3h, TRT-LLM ~4h (dừng sớm nếu không chạy), LMDeploy ~3h, llama.cpp ~1.5h, LMCache ~2h; B: + full sweep thư viện sống sót + thử kết hợp | ~14 | ~24 |
 | 3 | Profile cấu hình tốt nhất (nsys/ncu), danh sách nghẽn | ~8 | ~8 |
