@@ -1,6 +1,9 @@
 # P05 — W4: tải giống thật (phiên người dùng BurstGPT)
 
-> Cần GPU: có · Ước tính ~6.5 giờ GPU (~67k VND, chỉnh lại theo P03/P04) · Phụ thuộc: P03 (client phiên), P04 (năng lực để chọn k khởi đầu)
+> Cần GPU: có · Ước tính ~6.5 giờ GPU (~67k VND) → **ước lại sau P04: ~5–5.6 h (~38–43k VND)** · Phụ thuộc: P03 (client phiên), P04 (năng lực để chọn k khởi đầu)
+>
+> **Từ P04 (2026-10-13):** trần ước tính k ≈ 22 (phép tính từ throughput bão hoà + KV, xem báo cáo P04 mục 6) → khởi đầu nóng k = 16 / 24.
+> Trước khi thuê máy: thêm chế độ W4 vào `bench/sweep.py` (đơn vị = khung giờ × k × seed, `done.json`, `--status`, dùng `search_step`).
 >
 > 2026-10-12: thay thiết kế cũ "phát lại 30 phút BurstGPT với nội dung W2". Lý do và thiết kế đầy đủ:
 > [workloads.md — W4](../../workloads.md#w4--tải-giống-thật-bài-test-cuối).

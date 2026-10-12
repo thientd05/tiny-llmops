@@ -60,6 +60,9 @@
 | SLO | Mức độ trễ cam kết với người dùng. Dự án dùng SLO chính TTFT p95 ≤ 10 s, TPOT p95 ≤ 150 ms (căn cứ: nghiên cứu người dùng + tốc độ đọc, xem [workloads.md](workloads.md#slo)); SLO phụ 2 s / 100 ms để so sánh |
 | Phân tích độ nhạy | Tính lại kết quả với nhiều giá trị của một giả định (ví dụ ngưỡng TTFT 2/5/10/20 s) để xem kết luận có đổi không |
 | Goodput | Số user đồng thời tối đa trên 1 GPU mà vẫn đạt SLO. Báo cáo dạng khoảng: `lo` (mức đạt lớn nhất), kèm `hi` (mức trượt nhỏ nhất) |
+| Bão hoà | Số request chạy cùng lúc đã chạm trần (trên L4 do KV cache: P04 W1 ~60, W2 ~15, W3 ~6); thêm user chỉ làm hàng đợi dài ra, TTFT tăng, throughput đi ngang |
+| Thời gian chờ (queue time) | Thời gian request nằm trong hàng đợi của server trước khi được chạy; vLLM báo qua `vllm:request_queue_time_seconds` |
+| Khởi đầu nóng (warm start) | Sweep rút gọn bắt đầu từ (lo, hi) của cấu hình trước thay vì lưới gốc 8/16/32/64 |
 | Throughput | Số token xử lý được mỗi giây (tính riêng token vào và token ra) |
 | Sweep | Một loạt lần đo thay đổi một tham số (ví dụ số user). Với số user, các mức được chọn theo lưới thích nghi, không cố định |
 | Harness | Bộ script tự động chạy đo, lưu kết quả và thông tin môi trường |

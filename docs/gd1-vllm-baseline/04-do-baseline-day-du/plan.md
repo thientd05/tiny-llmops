@@ -44,9 +44,9 @@ W3 (~6–7) dễ trượt sớm → có thể cần xuống 4/2. Lưới cố đ
 
 ## Tiêu chí xong
 
-- [ ] Đủ 36 lần đo lưới gốc + các điểm mở rộng/tìm nhị phân, độ lệch giữa các lần lặp được báo cáo.
-- [ ] Goodput W1/W2/W3 xác định được **dạng khoảng hẹp** (`hi − lo ≤ max(2, 10% × lo)`), không còn dạng "≥ 64" hay "< 8".
-- [ ] Bảng tóm tắt đã ghi measurements.md; kết quả thô ở `results/gd1/04-do-baseline-day-du/`.
+- [x] Đủ 36 lần đo lưới gốc + các điểm mở rộng/tìm nhị phân, độ lệch giữa các lần lặp được báo cáo. (66 đơn vị)
+- [x] Goodput W1/W2/W3 xác định được **dạng khoảng hẹp** (`hi − lo ≤ max(2, 10% × lo)`), không còn dạng "≥ 64" hay "< 8". W1 68 (72), W2 18 (20), W3 6 (8)
+- [x] Bảng tóm tắt đã ghi measurements.md; kết quả thô ở `results/gd1/04-do-baseline-day-du/`.
 
 ## Báo cáo P04 cần trả lời
 

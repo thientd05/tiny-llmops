@@ -8,6 +8,9 @@
 |---|---|---|
 | Decode Qwen3-30B-A3B INT4 trên L4 (tổng tok/s) @ 8 / 16 / 32 / 64 user | 260 / 380 / 520 / 600 | Suy từ Jetson Thor (273 GB/s): C1 ~81, C8 ~262 tok/s (W4A16, vLLM) |
 | Prefill | ~5.000 tok/s | 2 × 3.3B FLOP/token, ~50% của 121 TFLOPS FP16 |
+
+> **Số đo thật (P04, 2026-10-13, vLLM mặc định):** decode W1 243 / 323 / 458 / 610 tok/s @ 8 / 16 / 32 / 64 user; prefill lúc bão hoà
+> ~2,780 tok/s (W2) / ~1,940 (W3); đơn giá trọn gói ≈ 7,570 VND/h ($0.289/h). Chi tiết: [measurements.md](measurements.md) mục P04.
 | Đơn giá L4 trọn gói | ~10.200 VND/h | Vast ~$0.33/h × 26.200 + ~15% ổ đĩa/băng thông |
 | Thời gian viết code | Không tính | Dùng Claude Code |
 

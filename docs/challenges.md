@@ -24,8 +24,12 @@ p95 của 100 mẫu là khoảng request chậm thứ 5. Chỉ cần một cụm
 
 **Quyết định.** Giữ max(100, 4N) và trung vị 3 lần lặp. Hai cấu hình được coi là khác nhau khi khoảng goodput không chồng nhau
 (docs/workloads.md). Ngưỡng 5% chỉ áp dụng cho throughput và TPOT, vì hai chỉ số này đạt (≤ 3.7%). Với TTFT p95, ghi rõ nhiễu ~20%
-ở chế độ bão hoà KV. P04 (×3 lần lặp ở 12 điểm lưới gốc) sẽ cho ước lượng nhiễu tốt hơn; cập nhật lại mục này sau P04.
+ở chế độ bão hoà KV.
 **Chi phí.** 0 giờ GPU thêm.
+**Cập nhật sau P04 (22 mức × 3 lần lặp).** Nhiễu (max − min) / trung vị: throughput trung vị 1.6% (max 5.1%), TPOT p95 3.6% (max 5.9%),
+**TTFT p95 15.7% (p75 23.5%, max 47.8%)** → xác nhận nhận định trên. Hệ quả thấy được: W2 / 20 user có TTFT p95 11.07 / 8.76 / 10.06 s
+(trung vị cách ngưỡng 0.6%) → goodput W2 = 18 nhưng 20 nằm ngay trên ranh giới; theo cửa sổ steady thì W2 = 20 (24 trượt).
+Kết luận cho các so sánh về sau: chênh goodput ≤ 1 bước tìm (2 user ở W2) chưa đủ để nói là khác nhau.
 
 ## #4 — Lần khởi động vLLM đầu tiên trên máy mới có KV cache ít hơn 23% (2026-10-12, P03)
 
