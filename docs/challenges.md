@@ -5,6 +5,31 @@
 
 ---
 
+## #3 — FlashInfer không biên dịch được kernel vì thiếu `ninja` trong PATH (2026-10-12, P01)
+
+**Bối cảnh.** Khởi động vLLM 0.30.0 lần 2 trên L4. **Triệu chứng.** Server chết ở bước warmup:
+`FileNotFoundError: 'ninja'` trong `flashinfer/jit/cpp_ext.py`.
+**Nguyên nhân.** FlashInfer biên dịch kernel sampling lúc chạy (JIT) bằng `ninja`. `ninja` có trong venv, nhưng script gọi
+`/root/venv/bin/vllm` bằng đường dẫn tuyệt đối, không kích hoạt venv → `ninja` không có trên PATH.
+**Quyết định.** `scripts/serve_default.sh` thêm `export PATH="$VENV/bin:$PATH"`. Không đổi cấu hình vLLM.
+**Chi phí.** ~3 phút GPU (~150 VND). Bài học: bước biên dịch JIT này còn tốn ~2 phút mỗi máy mới.
+
+## #2 — vLLM mặc định không khởi động được với Qwen3-30B-A3B INT4 trên L4 24 GB (2026-10-12, P01)
+
+**Bối cảnh.** Đo baseline "vLLM mặc định" (chỉ `vllm serve <model>`).
+**Triệu chứng.** `ValueError: To serve at least one request with the model's max seq len (40960), 3.75 GiB KV cache is needed,
+which is larger than the available KV cache memory (2.63 GiB)`.
+**Nguyên nhân.** Weight chiếm 15.7 GiB trên 22 GiB khả dụng; vLLM chỉ dùng 92% → còn 2.63 GiB cho KV cache (~28.7k token,
+96 KiB/token). vLLM đòi chứa trọn ít nhất 1 request dài tối đa (40960 token theo config model) → từ chối khởi động.
+**Phương án.** (a) tăng `gpu_memory_utilization` — đổi cách chia bộ nhớ, là việc của tune; (b) KV FP8 — cũng là tune;
+(c) giảm `max_model_len` — chỉ giới hạn độ dài request, không đổi cách chạy.
+**Quyết định.** (c) `--max-model-len 16384` (đủ cho W3: prompt ≤ 8k + output ≤ 350). "Baseline mặc định" của dự án
+= mặc định + đúng 1 cờ này. Đã dự đoán trước trong plan P01.
+**Chi phí.** ~3 phút GPU. Ý nghĩa cho đồ án: trên GPU 24 GB, model MoE INT4 ~16 GB để lại rất ít chỗ cho KV cache → đây là
+giới hạn chính của L4 với workload RAG (xem báo cáo P01).
+
+---
+
 ## #1 — Không đọc được GPU performance counter (`ncu`) trên L4 thuê (2026-10-12)
 
 **Bối cảnh.** Dự án cần `ncu` (Nsight Compute) để chẩn đoán vì sao kernel chậm (stall reason, occupancy, cache hit, số transaction bộ nhớ) trước khi viết custom CUDA.

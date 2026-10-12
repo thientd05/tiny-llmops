@@ -1,0 +1,10 @@
+Downloading hf-xet (4.0MiB)
+ Downloaded hf-xet
+Installed 17 packages in 290ms
+[90mHint: A new version of huggingface_hub (2.2.0) is available! You are using version 2.0.0.[0m
+[90mHint: The `hf-cli` skill is not installed. Run `hf skills add -g` to teach your AI agents how to use the `hf` CLI.[0m
+Fetching 11 files:   0%|          | 0/11 [00:00<?, ?it/s]Still waiting to acquire lock on /root/models/Qwen3-30B-A3B-GPTQ-Int4/.cache/huggingface/.gitignore.lock (elapsed: 0.1 seconds)
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+Fetching 11 files:   9%|▉         | 1/11 [00:00<00:02,  4.07it/s]Fetching 11 files:  18%|█▊        | 2/11 [00:00<00:01,  5.62it/s]Fetching 11 files:  64%|██████▎   | 7/11 [00:00<00:00, 14.60it/s]Fetching 11 files:  91%|█████████ | 10/11 [00:01<00:00,  6.93it/s]Fetching 11 files:  91%|█████████ | 10/11 [00:20<00:00,  6.93it/s]Fetching 11 files: 100%|██████████| 11/11 [02:44<00:00, 26.77s/it]Fetching 11 files: 100%|██████████| 11/11 [02:44<00:00, 14.98s/it]
+[32m✓ Downloaded[0m
+  path: /root/models/Qwen3-30B-A3B-GPTQ-Int4

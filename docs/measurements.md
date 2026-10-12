@@ -5,6 +5,124 @@
 
 ---
 
+## 2026-10-12 — P01: cài vLLM 0.30.0 và chạy thử Qwen3-30B-A3B-GPTQ-Int4 trên L4
+
+Báo cáo: [gd1-vllm-baseline/01-cai-dat-chay-thu/bao-cao.md](gd1-vllm-baseline/01-cai-dat-chay-thu/bao-cao.md).
+Kết quả thô: `results/gd1/01-cai-dat-chay-thu/20261012-p01/`.
+
+### Máy & phần mềm
+
+| Trường | Giá trị |
+|---|---|
+| Thời gian chạy (tính tiền) | 14:46:51 → 15:03:58 (+07), ~17 phút |
+| Instance / offer | 55518236 / 49498406 (đã destroy) |
+| Host / machine | **host 506934 / machine 116596** — Czechia (khác machine 77226 lần test trước) |
+| Giá | $0.2833/h tổng (disk 60 GB) |
+| Image | `nvidia/cuda:13.0.2-devel-ubuntu22.04` (nvcc 13.0.88, ncu 2025.3.1) |
+| Driver | 595.84 |
+| CPU / RAM | Xeon Silver 4114, 30 luồng thấy được / 94 GB |
+| PCIe | Gen3 x16 |
+| Phần mềm | vLLM **0.30.0**, torch 2.13.0 (cu130), flashinfer-python 0.6.18.post1, Python 3.12.14 (uv 0.12.19) |
+| Model | `Qwen/Qwen3-30B-A3B-GPTQ-Int4` @ `9b534e4318b7ebc3c961a839f13eb18b1833f441` (desc_act=false, group 128, 15.77 GiB) |
+
+### Checklist máy
+
+| Phép đo | Kết quả |
+|---|---|
+| Băng thông VRAM (cudaMemcpy D2D 1 GiB × 10) | **230.8 GB/s** (lần trước machine 77226: 231.2) |
+| `ncu` | `ERR_NVGPUCTRPERM` — host 506934 vẫn chặn |
+| `nsys` | không có trong image |
+
+### Thời gian (giây)
+
+| Bước | Thời gian |
+|---|---|
+| Cài uv | 1 |
+| Tải model 16 GB từ HF (song song với cài vLLM) | 168 (~95 MB/s) |
+| Cài vLLM + torch (uv) | 193 tính từ đầu |
+| **Setup tổng** | **193** |
+| Khởi động lần 1 (mặc định, compile từ đầu) — lỗi | nạp weight 47, torch.compile 62, capture CUDA graph 12 → lỗi KV |
+| Khởi động thành công (`--max-model-len 16384`, đã có cache compile) | **235** tới `/health` OK: nạp weight 53, torch.compile 1.2 (cache), capture CUDA graph 11 + 16, khoảng trống ~110 (nghi FlashInfer JIT biên dịch kernel sampling) |
+
+### Cấu hình mặc định vLLM 0.30.0 tự chọn
+
+| Mục | Giá trị |
+|---|---|
+| Kernel linear GPTQ | `MarlinLinearKernel` |
+| MoE | backend `MARLIN` WNA16, `MarlinExperts` (không có dòng "default MoE config" — đường Marlin không dùng config JSON Triton) |
+| Attention | `FLASH_ATTN` (FlashAttention 2), chọn từ FLASH_ATTN / FLASHINFER / TRITON_ATTN / FLEX_ATTENTION |
+| Sampling top-k/top-p | FlashInfer |
+| dtype / KV dtype | float16 / auto (=float16) |
+| Prefix caching / chunked prefill | bật / bật |
+| torch.compile / CUDA graph | VLLM_COMPILE / FULL_AND_PIECEWISE, max capture size 512 |
+| Model runner | V2 |
+| `gpu_memory_utilization` | 0.92 |
+| `max_model_len` | 40960 (theo config model) → **không khởi động được**, phải đặt 16384 |
+| max_num_batched_tokens | 2048 (suy từ "compile range (1, 2048)", chưa thấy in trực tiếp) |
+| Sampling mặc định | lấy từ `generation_config.json` của model: temperature 0.6, top_k 20, top_p 0.95 |
+
+### Bộ nhớ (GiB, lần khởi động thành công)
+
+| Phần | GiB |
+|---|---|
+| VRAM khả dụng / vLLM được dùng (0.92) | 22.04 / 20.27 |
+| Weight + non-torch | 16.1 (weight 15.68) |
+| Activation đỉnh | 0.76 |
+| CUDA graph | 0.33 thực tế (ước tính 0.64) |
+| **KV cache** | **3.41 → 37,264 token** (≈ 96 KiB/token, khớp 2×48×4×128×2 byte) |
+| nvidia-smi khi chạy | 21,057 / 23,034 MiB |
+
+Lần khởi động đầu (compile từ đầu, max_model_len 40960): KV chỉ **2.63 GiB → 28,688 token**. Chênh 0.78 GiB chưa rõ
+nguyên nhân (nghi bộ nhớ do torch.compile chiếm khi compile lần đầu) — kiểm ở P03.
+
+### Smoke test (1 request mỗi lần, chỉ để kiểm tra đúng/sai — không phải số benchmark)
+
+| Request | Prompt tok | Output tok | Thời gian | Ghi chú |
+|---|---|---|---|---|
+| 3 câu hỏi ngắn, thinking **bật** | 22–36 | 422 / 2345 / 1018 | 4.6 / 26.8 / 11.1 s | ~88–92 tok/s |
+| cùng câu, thinking **tắt** | 26–40 | 39 / 202 / 54 | 0.5 / 2.2 / 0.6 s | output ngắn hơn 10–19× |
+| W2 `techqa_TRAIN_Q041` (completions, greedy) | **2997** (= số đếm P02) | 150 | 2.3 s | trả lời đúng định dạng system prompt |
+| W3 hợp đồng dài nhất (completions, greedy) | **7879** (= số đếm P02) | 265 | 5.3 s | tóm tắt đúng 8 mục |
+
+### Chi phí
+
+Theo hoá đơn Vast (`vastai show invoices`): GPU 0.346 h = $0.092 · ổ đĩa 0.394 h = $0.007 · **tải xuống 21 GB = $0.027**
+→ **tổng $0.126 ≈ 3,300 VND**. Vast tính GPU 0.346 h (~21 phút), nhiều hơn ~17 phút đo từ lúc trạng thái `running`
+→ một phần thời gian `loading` cũng bị tính. Phí tải xuống (model 16 GB + gói Python ~5 GB) ≈ $0.027 **mỗi phiên máy mới**.
+
+### Lệnh tái lập
+
+```bash
+vastai create instance <OFFER> --image nvidia/cuda:13.0.2-devel-ubuntu22.04 --disk 60 --ssh --direct
+scp scripts/{setup_node.sh,serve_default.sh,smoke_test.py} <smoke_samples.jsonl> root@<IP>:/root/work/
+bash /root/work/setup_node.sh /root/results/p01
+bash /root/work/serve_default.sh /root/results/p01/server_default.log                       # mặc định → lỗi KV
+bash /root/work/serve_default.sh /root/results/p01/server.log --max-model-len 16384          # chạy được
+/root/venv/bin/python /root/work/smoke_test.py smoke_samples.jsonl /root/results/p01/smoke.json
+```
+
+---
+
+## 2026-10-12 — P02: bộ workload W1/W2/W3 (local, không GPU)
+
+Báo cáo: [gd1-vllm-baseline/02-bo-sinh-workload/bao-cao.md](gd1-vllm-baseline/02-bo-sinh-workload/bao-cao.md).
+Chi tiết + sha256: `workloads/manifest.json`. Đếm bằng tokenizer Qwen3, **tính cả chat template**.
+
+| Workload | Số mẫu | Prompt token min / TB / p50 / p95 / max | Output token min / TB / p50 / p95 / max | Phần đầu chung | Nguồn |
+|---|---|---|---|---|---|
+| W1 | 2000 | 200 / 407 / 368 / 726 / 800 | 200 / 333 / 272 / 600 / 600 | 3 token | ShareGPT (lượt hỏi đầu, ≥95% ký tự ASCII) |
+| W2 | 1253 | 2000 / 2858 / 2785 / 3887 / 3999 | 150 / 174 / 150 / 287 / 400 | **622 token** | RAGBench train+val: techqa 704, finqa 326, delucionqa 127, tatqa 80, emanual 16 |
+| W3 | 343 | 4008 / 5617 / 5577 / 7483 / 7879 | 250 / 299 / 301 / 344 / 350 | 95 token | CUAD (mọi split), 343 hợp đồng khác nhau, 286 bị cắt tại ranh giới đoạn |
+
+Build lại lần 2 → sha256 trùng (tái lập OK). Thời gian build ~100 s trên laptop.
+
+```bash
+.venv/bin/python workloads/build.py           # build
+.venv/bin/python workloads/build.py --check   # kiểm tra tái lập
+```
+
+---
+
 ## 2026-10-12 — Test máy L4 đầu tiên (Vast.ai)
 
 ### Thông tin máy

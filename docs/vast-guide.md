@@ -39,7 +39,7 @@ Hết tiền → máy bị stop; **nếu không lưu thẻ, máy và dữ liệu
 ### Cách A — Web (dễ nhất)
 
 1. [cloud.vast.ai/create](https://cloud.vast.ai/create/) → chọn template → bấm *Edit*:
-   - **Image**: `nvidia/cuda:12.8.1-devel-ubuntu22.04` (có `nvcc`, cần cho custom CUDA sau này)
+   - **Image**: `nvidia/cuda:13.0.2-devel-ubuntu22.04` (có `nvcc`, cần cho custom CUDA sau này)
    - **Launch mode**: *SSH* (bật *Use direct SSH connection*)
    - **Disk**: `140` GB
 2. Bộ lọc bên trái: GPU = **L4**, số GPU = 1, *Verified*, Reliability ≥ 98%.
@@ -55,7 +55,7 @@ vastai search offers 'gpu_name=L4 num_gpus=1 verified=true reliability>0.98 disk
 
 # Thuê theo ID ở cột đầu tiên
 vastai create instance <OFFER_ID> \
-  --image nvidia/cuda:12.8.1-devel-ubuntu22.04 \
+  --image nvidia/cuda:13.0.2-devel-ubuntu22.04 \
   --disk 140 --ssh --direct
 
 vastai show instances       # lấy INSTANCE_ID, chờ status = running
@@ -94,7 +94,7 @@ Sau đó: `Ctrl+Shift+P` → *Remote-SSH: Connect to Host* → `vast-l4`.
 ## 4. Checklist 10 phút đầu — không đạt thì destroy ngay
 
 ```bash
-nvidia-smi                          # đúng L4, 24GB, driver hỗ trợ CUDA ≥ 12.8
+nvidia-smi                          # đúng L4, 24GB, driver hỗ trợ CUDA ≥ 13.0 (driver ≥ 580)
 df -h / && free -g && nproc         # còn ~140GB, RAM ≥ 32GB
 nvcc --version                      # có compiler CUDA
 
@@ -112,7 +112,7 @@ nvcc -arch=sm_89 /tmp/t.cu -o /tmp/t && ncu /tmp/t 2>&1 | tail -5
 #  → thấy ERR_NVGPUCTRPERM   : bình thường với container; dùng phương án dự phòng
 ```
 
-> Image `nvidia/cuda:12.8.1-devel` có sẵn `nvcc` và `ncu` (2025.1.1) nhưng **không có `nsys`** — cài thêm khi cần.
+> Image `nvidia/cuda:13.0.2-devel` có sẵn `nvcc` 13.0 và `ncu` (2025.3.1) nhưng **không có `nsys`** — cài thêm khi cần.
 > Kết quả các lần test máy: xem [measurements.md](measurements.md). Host 506934 (Czechia) **chặn ncu**.
 
 ---

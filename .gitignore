@@ -1,3 +1,10 @@
 # Claude Code — không đưa lên Git
 .claude/
 CLAUDE*.md
+
+# Môi trường Python local
+.venv/
+__pycache__/
+
+# Dữ liệu tải về / sinh ra (build lại bằng workloads/build.py, kiểm bằng manifest.json)
+data/

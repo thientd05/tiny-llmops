@@ -1,0 +1,114 @@
+{
+  "seed": 20261012,
+  "sources": {
+    "tokenizer": {
+      "repo": "Qwen/Qwen3-30B-A3B-GPTQ-Int4",
+      "revision": "9b534e4318b7ebc3c961a839f13eb18b1833f441"
+    },
+    "ragbench": {
+      "repo": "galileo-ai/ragbench (trước là rungalileo/ragbench)",
+      "revision": "97808f3e5fd16ede40bbff6c2949af8139b2eb7b",
+      "license": "CC-BY-4.0 (dataset thành phần có license riêng)"
+    },
+    "sharegpt": {
+      "repo": "anon8231489123/ShareGPT_Vicuna_unfiltered",
+      "file": "ShareGPT_V3_unfiltered_cleaned_split.json",
+      "revision": "192ab2185289094fc556ec8ce5ce1e8e587154ca",
+      "license": "apache-2.0 (nội dung từ ShareGPT, chỉ dùng nghiên cứu)"
+    }
+  },
+  "system_prompts": {
+    "w2": {
+      "file": "workloads/prompts/w2_system.txt",
+      "sha256": "fa97522f4b2e29ab3eea1587fb3af236eb665d5303fb8362dc1c9a3a0f791d07"
+    },
+    "w3": {
+      "file": "workloads/prompts/w3_system.txt",
+      "sha256": "f6730320bd3833bd74e04a7eecbaf0fa26f9a2bf6063aab445824e7b1b534d89"
+    }
+  },
+  "chat_template": "Qwen3, enable_thinking=False, add_generation_prompt=True",
+  "files": {
+    "w1": {
+      "path": "data/workloads/w1.jsonl",
+      "sha256": "5dae725e438c57ab48becc9d3373d505e6d2a9e1a156b8c8505fbe6d224dc175",
+      "n": 2000,
+      "prompt_tokens": {
+        "min": 200,
+        "mean": 407.1,
+        "p50": 368,
+        "p95": 726,
+        "max": 800
+      },
+      "output_tokens": {
+        "min": 200,
+        "mean": 332.7,
+        "p50": 272,
+        "p95": 600,
+        "max": 600
+      },
+      "sources": {
+        "sharegpt": 2000
+      },
+      "shared_prefix_tokens": 3
+    },
+    "w2": {
+      "path": "data/workloads/w2.jsonl",
+      "sha256": "ec89089788d64d51654cdb198fdde626d2f88fe2789167ef1e8778de9915dbfe",
+      "n": 1253,
+      "prompt_tokens": {
+        "min": 2000,
+        "mean": 2858.2,
+        "p50": 2785,
+        "p95": 3887,
+        "max": 3999
+      },
+      "output_tokens": {
+        "min": 150,
+        "mean": 174.4,
+        "p50": 150,
+        "p95": 287,
+        "max": 400
+      },
+      "sources": {
+        "finqa": 326,
+        "techqa": 704,
+        "delucionqa": 127,
+        "tatqa": 80,
+        "emanual": 16
+      },
+      "shared_prefix_tokens": 622,
+      "dropped_docsets_out_of_range": {
+        "techqa": 44,
+        "emanual": 435,
+        "delucionqa": 602,
+        "finqa": 2083,
+        "tatqa": 2399
+      }
+    },
+    "w3": {
+      "path": "data/workloads/w3.jsonl",
+      "sha256": "d98d6baa43c2286e5813f9da64499fc6ee6f255a480e498c611c0d97c7750790",
+      "n": 343,
+      "prompt_tokens": {
+        "min": 4008,
+        "mean": 5617.1,
+        "p50": 5577,
+        "p95": 7483,
+        "max": 7879
+      },
+      "output_tokens": {
+        "min": 250,
+        "mean": 299.0,
+        "p50": 301,
+        "p95": 344,
+        "max": 350
+      },
+      "sources": {
+        "cuad": 343
+      },
+      "shared_prefix_tokens": 95,
+      "truncated_contracts": 286
+    }
+  }
+}
