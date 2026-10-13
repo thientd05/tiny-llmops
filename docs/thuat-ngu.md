@@ -29,8 +29,9 @@
 | Decode | Các bước sau: sinh từng token output một. Mỗi bước phải đọc lại toàn bộ weight cần dùng từ VRAM → bị giới hạn bởi băng thông bộ nhớ |
 | KV cache | Vùng VRAM lưu kết quả trung gian (key, value) của các token đã xử lý để không tính lại. Dung lượng KV cache quyết định bao nhiêu request chạy cùng lúc được |
 | PagedAttention | Cách vLLM chia KV cache thành khối nhỏ (16 token) và cấp cho request khi cần, không giữ chỗ trước cho độ dài tối đa |
-| Prefix caching | Giữ lại KV cache của phần đầu prompt giống nhau (ví dụ system prompt) để request sau dùng lại, bỏ qua prefill phần đó |
+| Prefix caching | Giữ lại KV cache của phần đầu prompt giống nhau (ví dụ system prompt) để request sau dùng lại, bỏ qua prefill phần đó. Bị đẩy ra khi KV đầy; P05: lúc cao điểm lịch sử hội thoại bị đẩy ra trong < 2 phút |
 | Chunked prefill | Chia prefill của prompt dài thành nhiều phần, xen với các bước decode của request khác → request khác không bị dừng lâu |
+| Ngân sách token mỗi bước (`max_num_batched_tokens`) | Số token tối đa vLLM xử lý trong một bước (mặc định 2,048 trên L4). Prompt dài chiếm ngân sách nhiều bước liền → request mới phải chờ |
 | Batch | Nhóm request được GPU xử lý cùng một bước |
 | Preemption | Khi hết KV cache, vLLM tạm dừng một số request (bỏ KV của chúng, tính lại sau) → các request đó bị chậm |
 | CUDA graph | Ghi lại chuỗi lệnh GPU một lần, chạy lại nhiều lần → giảm thời gian CPU gửi lệnh |
@@ -49,6 +50,11 @@
 | Phiên (session) | Một cuộc hội thoại gồm nhiều lượt hỏi–đáp; lượt sau mang theo lịch sử các lượt trước |
 | Think time | Thời gian **người dùng** đọc và nghỉ, từ lúc nhận xong câu trả lời tới lúc gửi câu tiếp theo (không phải chế độ thinking của model) |
 | Chồng phiên | Cách tăng tải W4: phát chồng các phiên của cùng khung giờ từ k ngày khác nhau của trace → k lần số người dùng, giữ nguyên think time |
+| Kịch bản gốc (W4) | Kịch bản W4 sinh một lần với cả 110 ngày (`<khung>-k110-s<seed>.jsonl`). Kịch bản k ngày = lấy phiên của k ngày đầu trong hoán vị ngày → kịch bản k nằm trọn trong kịch bản k' > k, kể cả nội dung tin nhắn |
+| Dừng sớm (W4) | Lần chạy W4 dừng trước 30 phút khi số request **chắc chắn** trượt SLO đã vượt 5% số request tối đa có thể gửi → p95 chắc chắn trượt, chạy tiếp chỉ tốn tiền. Số p95 ghi lại là của phần đã chạy |
+| Thời gian chờ sau cửa sổ (drain) | Sau 30 phút đo, client chờ các request còn dở tối đa 10 s + 4096 × 150 ms + 30 s ≈ 654 s. Request đạt SLO chắc chắn xong trước mốc này; request bị cắt chắc chắn đã trượt |
+| Gửi trễ (lag) | Request được gửi muộn hơn lịch của kịch bản bao nhiêu (gồm thời gian client ghép prompt). Kiểm tra client không làm sai nhịp tải |
+| Phiên đang mở | Phiên đã gửi lượt đầu và chưa quá 10 phút sau lượt cuối; xấp xỉ số người đang dùng chatbot cùng lúc (đa số đang đọc / nghỉ, không có request trên server) |
 | Điểm gãy (knee) | Mức N mà TTFT hoặc TPOT p95 bắt đầu vượt SLO |
 | Lưới thích nghi + tìm nhị phân | Cách tìm goodput: đo lưới gốc 8/16/32/64, nhân đôi lên hoặc chia đôi xuống nếu chưa thấy điểm gãy, rồi chia đôi khoảng giữa mức đạt và mức trượt. Chi tiết: [workloads.md](workloads.md#cách-tìm-goodput-lưới-thích-nghi) |
 | Hiệu ứng trần | Kết quả bị chặn ở biên vùng đo (ví dụ "≥ 64") → hai cấu hình khác nhau trông như bằng nhau |

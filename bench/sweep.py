@@ -3,10 +3,13 @@
     python bench/sweep.py --config bench/configs/full.yaml --out results/gd1/04-do-baseline-day-du   # chạy / chạy tiếp
     python bench/sweep.py --config ... --out ... --status                                              # xem tiến độ
 
-Hai chế độ (mode trong file cấu hình):
+Ba chế độ (mode trong file cấu hình):
 - grid:   danh sách điểm đo cho trước (smoke).
 - search: tìm goodput theo docs/workloads.md "Cách tìm goodput": lưới gốc → nhân đôi / chia đôi → tìm nhị phân.
           Chạy theo đợt; điểm tiếp theo tính lại từ các done.json đã có (tất định) → dừng rồi chạy lại cùng lệnh là đi tiếp.
+- w4:     W4 tải giống thật (P05). Đơn vị = kịch bản × k ngày × lần lặp (w4-peak-s1-k16-r1), mỗi đơn vị một lần phát lại
+          10 phút khởi động + 30 phút đo bằng bench/session_client.py scenario. Tìm k như chế độ search (cùng search_step)
+          trên kịch bản `search_on`, xong thì chạy các kịch bản `checks` ở k = lo (seed khác, khung giờ khác).
 
 Mỗi đơn vị đo (ví dụ w2-c32-r2) nằm ở <out>/units/<id>/; done.json (chứa hash cấu hình) ghi cuối cùng.
 Thư mục không có done.json hợp lệ = dở dang → xoá và đo lại. Trước mỗi lần đo: warmup → /reset_prefix_cache.
@@ -37,6 +40,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 import common as C  # noqa: E402
 
 UNIT_RE = re.compile(r"^(?P<w>[a-z0-9]+)-c(?P<n>\d+)-r(?P<r>\d+)(?:-(?P<client>[a-z]+))?$")
+W4_RE = re.compile(r"^w4-(?P<key>[a-z0-9]+-s\d+)-k(?P<k>\d+)-r(?P<r>\d+)$")
 POLL_METRICS = ["vllm:num_requests_running", "vllm:num_requests_waiting", "vllm:kv_cache_usage_perc",
                 "vllm:num_preemptions_total", "vllm:prefix_cache_queries_total", "vllm:prefix_cache_hits_total",
                 "vllm:prompt_tokens_total", "vllm:generation_tokens_total"]
@@ -389,7 +393,7 @@ class Runner:
         if not wu.get("requests"):
             return
         rows = []
-        with open(wl["path"]) as f:
+        with open(C.resolve(wu["path"]) if wu.get("path") else wl["path"]) as f:
             for line in f:
                 rows.append(json.loads(line))
                 if len(rows) >= wu["requests"]:
@@ -430,6 +434,277 @@ class Runner:
                 cmd += ["--temperature", str(samp["temperature"])]
             return cmd
         raise ValueError(client)
+
+
+# ---------- chế độ w4 (P05) ----------
+
+class W4Runner(Runner):
+    """W4: phát lại phiên người dùng. Kịch bản k ngày = kịch bản gốc (k=110) lọc theo k ngày đầu của hoán vị."""
+
+    def __init__(self, cfg, out, machine, dry=False):
+        super().__init__(cfg, out, machine, dry)
+        self.w4 = cfg["w4"]
+
+    # --- trạng thái từ đĩa ---
+    def done_units(self):
+        res = {}
+        for d in self.units.iterdir():
+            m = W4_RE.match(d.name)
+            if not m or m["key"] not in self.w4["scenarios"]:
+                continue
+            key, k, r = m["key"], int(m["k"]), int(m["r"])
+            if C.is_done(d, C.sha256_obj(self.spec(key, k, r))):
+                res[(key, k, r)] = d
+        return res
+
+    def spec(self, key, k, r):
+        sc = self.w4["scenarios"][key]
+        cfg = self.cfg
+        return {"workload": "w4", "scenario": key, "scenario_sha256": sc["sha256"], "k": int(k),
+                "days": sc["days"][:k], "repeat": int(r), "window": sc["window"],
+                "time_scale": self.w4.get("time_scale", 1.0), "client": "session",
+                "sampling": cfg["client"]["sampling"], "warmup": cfg["warmup"], "server_start": cfg["server"]["start"],
+                "software": cfg["software"],
+                "abort_certain_fail": bool(self.w4.get("abort_certain_fail")),
+                "slo": cfg["slo"]}  # SLO quyết định lúc dừng sớm / cắt request sau cửa sổ
+
+    @staticmethod
+    def unit_verdict(met):
+        return C.passes(met["all"], met["slo"]) and not met["w4"]["aborted"]
+
+    def analyze(self, key=None, done=None):
+        """Trạng thái tìm k trên kịch bản search_on, tính lại hoàn toàn từ các đơn vị đã xong."""
+        key = key or self.w4["search_on"]
+        done = self.done_units() if done is None else done
+        R = self.cfg["repeats"]
+        reps = {}
+        for (key2, k, r), d in done.items():
+            if key2 == key:
+                reps.setdefault(k, {})[r] = d
+        levels, verdicts, counts = {}, {}, {}
+        for k, rr in sorted(reps.items()):
+            counts[k] = len(rr)
+            use = list(range(1, 2 * R + 1)) if all(r in rr for r in range(1, 2 * R + 1)) else \
+                list(range(1, R + 1)) if all(r in rr for r in range(1, R + 1)) else None
+            lv = {"repeats_done": sorted(rr), "verdict": None, "units": {}}
+            for r, d in rr.items():
+                met = C.read_json(d / "metrics.json")
+                lv["units"][r] = {"verdict": self.unit_verdict(met), "aborted": met["w4"]["aborted"],
+                                  "ttft_p95_ms": met["all"]["ttft_p95_ms"], "tpot_p95_ms": met["all"]["tpot_p95_ms"],
+                                  "n_requests": met["all"]["n_requests"]}
+            if use:
+                vs = [lv["units"][r]["verdict"] for r in use]
+                lv["verdict"] = sum(vs) * 2 > len(vs)  # đa số; hoà (2 lần lặp, 1 đạt 1 trượt) → trượt
+                verdicts[k] = lv["verdict"]
+            levels[k] = lv
+        status, need = C.search_step(verdicts, counts, self.cfg["search"], R, self.max_k())
+        lo, hi = C.interval(verdicts)
+        return {"levels": levels, "verdicts": verdicts, "status": status, "need": need, "lo": lo, "hi": hi}
+
+    def max_k(self):
+        return min(len(sc["days"]) for sc in self.w4["scenarios"].values())
+
+    def plan_batch(self):
+        done = self.done_units()
+        a = self.analyze(done=done)
+        todo = []
+        if a["status"] == "measuring":
+            for k, q in a["need"].items():
+                for r in range(1, q + 1):
+                    todo.append((self.w4["search_on"], k, r))
+        elif a["lo"] is not None:
+            for key in self.w4.get("checks", []):
+                todo.append((key, a["lo"], 1))
+            if all((key, a["lo"], 1) in done for key in self.w4.get("checks", [])):
+                for key, k in self.w4.get("extra", []):  # lần chạy thêm, quyết định sau khi xem kiểm tra (có lý do trong plan)
+                    todo.append((key, int(k), 1))
+        todo = [u for u in todo if u not in done]
+        return sorted(todo, key=lambda u: (u[2], u[0] != self.w4["search_on"], u[1]))
+
+    def ref_todo(self):
+        """Điểm mốc đo trước W4 (ví dụ W2 / 16 user × 3 lần, vllm bench serve) để so máy mới với máy của P04
+        (thi-nghiem-chay-tiep.md nguyên tắc 9)."""
+        done = Runner.done_units(self)
+        todo = [(r, p["w"], p["n"], "vllm") for p in self.cfg.get("reference", [])
+                for r in range(1, p.get("repeats", 1) + 1)]
+        return [u for u in todo if (u[1], u[2], u[0], u[3]) not in done]
+
+    # --- chạy ---
+    def run(self):
+        ref = self.ref_todo()
+        if ref:
+            log("điểm mốc: " + ", ".join(C.unit_id(w, n, r, c) for r, w, n, c in ref))
+            if self.dry:
+                return
+            for r, w, n, client in ref:
+                Runner.run_unit(self, w, n, r, client)
+        while True:
+            todo = self.plan_batch()
+            if not todo:
+                break
+            log("đợt mới: " + ", ".join(w4_uid(*u) for u in todo))
+            if self.dry:
+                return
+            for key, k, r in todo:
+                self.run_unit(key, k, r)
+        a = self.analyze()
+        log(f"xong toàn bộ — tìm k: {a['status']}, goodput W4 {C.fmt_interval(a['lo'], a['hi'], a['status'])}")
+
+    def run_unit(self, key, k, r):
+        cfg = self.cfg
+        uid = w4_uid(key, k, r)
+        spec = self.spec(key, k, r)
+        h = C.sha256_obj(spec)
+        d = self.units / uid
+        if C.is_done(d, h):
+            return
+        if d.exists():
+            log(f"{uid}: thư mục dở dang (không có done.json hợp lệ) → xoá, đo lại")
+            shutil.rmtree(d)
+        d.mkdir(parents=True)
+        self.server.ensure()
+        srv = self.server.current
+        t_begin = time.time()
+        sc = self.w4["scenarios"][key]
+        log(f"{uid}: {sc['path'].name}, k={k} ngày, cửa sổ {sc['window']['warmup_s']} + {sc['window']['measure_s']} s")
+
+        self.warmup(None)
+        self.server.reset_prefix_cache()
+        (d / "metrics_before.txt").write_text(self.server.metrics_text())
+        pol = Pollers(self.server, d)
+        pol.start()
+        cmd = self.client_cmd_w4(key, k, d)
+        t0 = time.time()
+        try:
+            with open(d / "client.log", "w") as lf:
+                p = subprocess.run(cmd, stdout=lf, stderr=subprocess.STDOUT, timeout=cfg.get("unit_timeout_s", 4200))
+        finally:
+            pol.stop()
+        t1 = time.time()
+        (d / "metrics_after.txt").write_text(self.server.metrics_text())
+        if p.returncode != 0:
+            tail = (d / "client.log").read_text(errors="replace")[-3000:]
+            raise RuntimeError(f"{uid}: client lỗi (mã {p.returncode}):\n{tail}")
+        raw = C.read_json(d / "bench.json.gz")
+        reqs = C.load_requests(d, raw)
+        meas = raw["window"]["measure_s"]
+        lags = [x for x in raw["lag"] if x is not None]
+        met = {"all": C.compute_metrics(reqs, 0, "all"), "slo": cfg["slo"],
+               "w4": {"aborted": raw["aborted"], "drain_cut": raw["drain_cut"], "sessions": raw["sessions"],
+                      "requests_sent": len(raw["ttfts"]), "requests_in_window": len(reqs),
+                      "req_per_hour": len(reqs) * 3600 / meas,
+                      "lag_p50_s": float(C.np.percentile(lags, 50)) if lags else None,
+                      "lag_p99_s": float(C.np.percentile(lags, 99)) if lags else None,
+                      "lag_max_s": max(lags) if lags else None}}
+        met["verdict"] = self.unit_verdict(met)
+        C.write_json(d / "metrics.json", met)
+        C.write_json(d / "meta.json", {
+            "run_id": uid, "spec": spec, "spec_sha256": h, "start": datetime.fromtimestamp(t0).astimezone().isoformat(),
+            "end": datetime.fromtimestamp(t1).astimezone().isoformat(), "client_s": round(t1 - t0, 2),
+            "unit_s": round(time.time() - t_begin, 2), "machine": self.machine, "hostname": socket.gethostname(),
+            "server": srv, "client_cmd": cmd, "dataset": str(sc["path"]), "git_commit": self.git,
+            "config": cfg["_path"]})
+        C.write_json(d / "done.json", {"spec_sha256": h, "finished": now_iso()})
+        a = met["all"]
+        log(f"{uid}: xong sau {t1 - t0:.0f} s — {a['n_requests']} request trong cửa sổ, TTFT p95 {a['ttft_p95_ms']:.0f} ms,"
+            f" TPOT p95 {a['tpot_p95_ms']:.1f} ms, lỗi {a['failed']}"
+            + (" — DỪNG SỚM" if raw["aborted"] else "")
+            + f" → {'ĐẠT' if met['verdict'] else 'TRƯỢT'}")
+
+    def client_cmd_w4(self, key, k, d):
+        cfg, s = self.cfg, self.cfg["server"]
+        sc = self.w4["scenarios"][key]
+        samp = cfg["client"]["sampling"]
+        cmd = [cfg["client"].get("python", sys.executable), str(C.ROOT / "bench/session_client.py"), "scenario",
+               "--scenario", str(sc["path"]), "--days", ",".join(str(x) for x in sc["days"][:k]),
+               "--tokenizer", str(C.resolve(cfg["client"]["tokenizer"])), "--base-url", s["base_url"],
+               "--model", s["model"], "--out", str(d / "bench.json.gz"), "--progress", str(d / "progress.json"),
+               "--slo-ttft-ms", str(cfg["slo"]["ttft_ms"]), "--slo-tpot-ms", str(cfg["slo"]["tpot_ms"])]
+        if self.w4.get("abort_certain_fail"):
+            cmd.append("--abort-certain-fail")
+        if self.w4.get("time_scale", 1.0) != 1.0:
+            cmd += ["--time-scale", str(self.w4["time_scale"])]
+        if samp.get("ignore_eos"):
+            cmd.append("--ignore-eos")
+        if "temperature" in samp:
+            cmd += ["--temperature", str(samp["temperature"])]
+        return cmd
+
+
+def w4_uid(key, k, r):
+    return f"w4-{key}-k{k}-r{r}"
+
+
+def prepare_w4(cfg):
+    """Kịch bản gốc: đường dẫn, sha256 (so với workloads/manifest_w4.json), hoán vị ngày và cửa sổ từ file summary."""
+    manifest = json.loads((C.ROOT / "workloads/manifest_w4.json").read_text()).get("scenarios", {})
+    scen = {}
+    for key, path in cfg["w4"]["scenarios"].items():
+        path = C.resolve(path)
+        if not path.exists():
+            sys.exit(f"thiếu kịch bản {path} — sinh bằng workloads/build_w4.py scenario --k 110")
+        summ = json.loads(Path(str(path).removesuffix(".jsonl") + ".summary.json").read_text())
+        sha = C.sha256_file(path)
+        if path.name in manifest and manifest[path.name] != sha:
+            sys.exit(f"{path.name}: sha256 {sha} khác workloads/manifest_w4.json — sinh lại bằng build_w4.py")
+        scen[key] = {"path": path, "sha256": sha, "days": summ["days"], "window": summ["window"],
+                     "summary": summ}
+    cfg["w4"]["scenarios"] = scen
+    if cfg["w4"]["search_on"] not in scen or any(c not in scen for c in cfg["w4"].get("checks", [])) \
+            or any(e[0] not in scen for e in cfg["w4"].get("extra", [])):
+        sys.exit("w4.search_on / w4.checks / w4.extra phải dùng khoá trong w4.scenarios")
+
+
+def status_w4(runner):
+    cfg = runner.cfg
+    done = runner.done_units()
+    a = runner.analyze(done=done)
+    print(f"cấu hình {cfg['_path']} · chế độ w4 · {len(done)} đơn vị đã xong · SLO TTFT p95 ≤ {cfg['slo']['ttft_ms']} ms,"
+          f" TPOT p95 ≤ {cfg['slo']['tpot_ms']} ms · dừng sớm: {bool(runner.w4.get('abort_certain_fail'))}")
+    for (w, n, r, client), d in sorted(Runner.done_units(runner).items()):
+        m = C.read_json(d / "metrics.json")[cfg["verdict_window"]]
+        print(f"điểm mốc {C.unit_id(w, n, r, client)}: TTFT p95 {m['ttft_p95_ms']:.0f} ms, TPOT p95 {m['tpot_p95_ms']:.1f} ms,"
+              f" {m['output_tok_s']:.0f} tok/s ra")
+    print(f"\ntìm k trên {runner.w4['search_on']}: {a['status']}, goodput {C.fmt_interval(a['lo'], a['hi'], a['status'])}")
+    for k, lv in a["levels"].items():
+        v = {True: "đạt", False: "trượt", None: "chưa đủ lần lặp"}[lv["verdict"]]
+        us = "; ".join(f"r{r}: TTFT p95 {u['ttft_p95_ms']:.0f} ms, TPOT p95 {u['tpot_p95_ms']:.1f} ms, "
+                       f"{u['n_requests']} req" + (" (dừng sớm)" if u["aborted"] else "")
+                       for r, u in sorted(lv["units"].items()))
+        print(f"  k={k:<4} {v:16} {us}")
+    checks = [(key, k, r, d) for (key, k, r), d in sorted(done.items()) if key != runner.w4["search_on"]]
+    if checks:
+        print("\nkiểm tra:")
+        for key, k, r, d in checks:
+            met = C.read_json(d / "metrics.json")
+            print(f"  {w4_uid(key, k, r)}: {'đạt' if met['verdict'] else 'trượt'}, TTFT p95 "
+                  f"{met['all']['ttft_p95_ms']:.0f} ms, TPOT p95 {met['all']['tpot_p95_ms']:.1f} ms")
+    # đơn vị đang chạy
+    for d in sorted(runner.units.iterdir()):
+        if W4_RE.match(d.name) and not (d / "done.json").exists() and (d / "progress.json").exists():
+            p = C.read_json(d / "progress.json")
+            print(f"\nđang chạy {d.name}: t = {p['t_trace_s']:.0f} / {p['window_end_s']} s, gửi {p['sent']} "
+                  f"({p['sent_in_window']} trong cửa sổ), đang chờ {p['in_flight']}, chắc trượt TTFT "
+                  f"{p['certain_fail_ttft']} / TPOT {p['certain_fail_tpot']} (ngưỡng dừng {p['abort_threshold']})")
+    todo = runner.plan_batch()
+    unit_s = [C.read_json(d / "meta.json")["unit_s"] for d in done.values()]
+    win = next(iter(runner.w4["scenarios"].values()))["window"]
+    per = statistics_median(unit_s, (win["warmup_s"] + win["measure_s"]) * runner.w4.get("time_scale", 1.0) + 60)
+    lo, hi = a["lo"], a["hi"]
+    if a["status"] != "measuring":
+        future = 0
+    elif lo and hi:
+        future = max(0, math.ceil(math.log2(max((hi - lo) / C.tol(lo, cfg["search"]), 1))) - 1)
+    else:
+        future = 3
+    n_checks = 0 if a["status"] != "measuring" else len(runner.w4.get("checks", []))
+    rest = (len(todo) + future + n_checks) * per + len(runner.ref_todo()) * cfg.get("unit_overhead_s", 25) * 6
+    print(f"\nđợt hiện tại còn {len(todo)} đơn vị: " + ", ".join(w4_uid(*u) for u in todo)
+          + f"; ước thêm ~{future} mức tìm k + {n_checks} kiểm tra sau đợt này")
+    price = cfg.get("price_usd_per_h", 0.30)
+    hours = rest / 3600
+    print(f"ước tính còn ~{hours:.2f} giờ GPU (≈ ${hours * price:.2f} ≈ {hours * price * 26200:,.0f} VND),"
+          f" {per / 60:.0f} phút / đơn vị")
 
 
 def compact_vllm_result(src, dst):
@@ -532,12 +807,16 @@ def main():
                     help="ghi vào meta: ví dụ 'host=506934 machine=116596 instance=...'")
     args = ap.parse_args()
     cfg = C.load_config(args.config)
+    w4 = cfg["mode"] == "w4"
+    cfg.setdefault("workloads", {})
     prepare_workloads(cfg)
+    if w4:
+        prepare_w4(cfg)
     out = Path(args.out)
     out.mkdir(parents=True, exist_ok=True)
-    runner = Runner(cfg, out, args.machine, dry=args.dry_run)
+    runner = (W4Runner if w4 else Runner)(cfg, out, args.machine, dry=args.dry_run)
     if args.status:
-        status(runner)
+        status_w4(runner) if w4 else status(runner)
         return
     signal.signal(signal.SIGTERM, lambda *_: sys.exit(143))
     try:

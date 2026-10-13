@@ -1,0 +1,35 @@
+# Thử chế độ w4 ở LOCAL với server giả kiểu hàng đợi (bench/fake_server.py), thời gian co 100 lần (40 phút → 24 s).
+# Dùng trong bench/test_fake.sh w4. SLO co theo: TTFT 10 s → 100 ms; TPOT giữ đơn vị thật của server giả.
+mode: w4
+repeats: 1
+slo: {ttft_ms: 100, tpot_ms: 3}
+slo2: {ttft_ms: 20, tpot_ms: 2}
+verdict_window: all
+search: {warm_start: [16, 24], min_n: 1, max_n: 110, abs_tol: 2, rel_tol: 0.10}
+w4:
+  scenarios:
+    peak-s1: data/workloads/w4/peak-k110-s1.jsonl
+    peak-s2: data/workloads/w4/peak-k110-s2.jsonl
+    normal-s1: data/workloads/w4/normal-k110-s1.jsonl
+  search_on: peak-s1
+  checks: [peak-s2, normal-s1]
+  abort_certain_fail: true
+  time_scale: 0.01
+reference:
+  - {w: w2, n: 16, repeats: 1}
+workloads:
+  w2: {path: data/workloads/w2.jsonl}
+server:
+  start: "bash bench/fake_serve.sh {log} --mode queue --capacity $FAKE_CAP --prefill-s 0.000002 --token-s 0.0005 --slowdown 0.02 --chunk-tokens 20 --prefix-cache-blocks 200000"
+  stop: "bash bench/fake_serve.sh --stop"
+  base_url: http://localhost:8123
+  model: Qwen/Qwen3-30B-A3B-GPTQ-Int4
+  restart: never
+client:
+  vllm_cmd: "env VLLM_TARGET_DEVICE=cpu /home/thienta/.local/share/vllm-bench-venv/bin/vllm bench serve"
+  tokenizer: data/raw/qwen3-tokenizer
+  sampling: {temperature: 0, ignore_eos: true}
+warmup: {requests: 4, max_tokens: 16, path: data/workloads/w2.jsonl}
+software: {server: fake}
+unit_timeout_s: 600
+unit_overhead_s: 8

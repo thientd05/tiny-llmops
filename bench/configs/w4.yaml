@@ -1,0 +1,56 @@
+# P05 — W4 tải giống thật trên L4 (vLLM 0.30.0 mặc định + --max-model-len 16384 + --enable-prompt-tokens-details).
+# Chạy trên máy thuê:  bash scripts/remote_bench.sh bench/configs/w4.yaml /root/results/p05
+#
+# - Điểm mốc trước: W2 / 16 user × 3 lần (vllm bench serve) → so máy mới với máy P04 (thi-nghiem-chay-tiep.md nguyên tắc 9).
+# - Tìm k trên peak seed 1: khởi đầu nóng k = 16 và 24 (ước từ P04: trần ~22) → nhân đôi / chia đôi / tìm nhị phân
+#   tới hi − lo ≤ max(2, 10% × lo). Mỗi mức 1 lần chạy (40 phút); 2 lần chỉ khi kết quả không đơn điệu.
+# - Xong thì chạy ở k = lo: peak seed 2 (bộ ngày khác), peak2 (10h), normal (13h).
+# - Kịch bản k ngày = kịch bản gốc k=110 lọc theo k ngày đầu của hoán vị → kịch bản k nằm trọn trong k' > k.
+# - --enable-prompt-tokens-details: chỉ gắn thêm số token trúng prefix cache vào `usage` của câu trả lời
+#   (vllm/entrypoints/openai/completion/serving.py, 0.30.0), không đổi cách chạy → đo được cache theo từng request.
+mode: w4
+repeats: 1
+slo: {ttft_ms: 10000, tpot_ms: 150}
+slo2: {ttft_ms: 2000, tpot_ms: 100}
+verdict_window: all
+search: {warm_start: [16, 24], min_n: 1, max_n: 110, abs_tol: 2, rel_tol: 0.10}
+w4:
+  scenarios:
+    peak-s1: data/workloads/w4/peak-k110-s1.jsonl
+    peak-s2: data/workloads/w4/peak-k110-s2.jsonl
+    peak2-s1: data/workloads/w4/peak2-k110-s1.jsonl
+    normal-s1: data/workloads/w4/normal-k110-s1.jsonl
+  search_on: peak-s1
+  checks: [peak-s2, peak2-s1, normal-s1]
+  # thêm 2026-10-13 sau khi peak-s2 trượt ở k = lo = 18: đo peak-s2 ở 16 để biết bộ ngày khác lệch 1 bước hay hơn.
+  # Chỉ 1 lần chạy; goodput chính vẫn theo search_on (plan P05, mục "Kết quả chạy").
+  extra: [[peak-s2, 16]]
+  abort_certain_fail: true     # dừng khi p95 chắc chắn trượt (session_client.py) → mức quá tải tốn ~10–20 phút thay vì ~50
+reference:
+  - {w: w2, n: 16, repeats: 3}
+workloads:
+  w2: {path: data/workloads/w2.jsonl}
+num_requests: {min: 100, per_user: 4}
+seed_base: 1000
+server:
+  start: "bash scripts/serve_default.sh {log} --max-model-len 16384 --enable-prompt-tokens-details"
+  stop: "bash scripts/stop_server.sh"
+  base_url: http://localhost:8000
+  model: Qwen/Qwen3-30B-A3B-GPTQ-Int4
+  recompile_restart_s: 10     # compile từ đầu → KV nhỏ hơn (P03) → bật lại trước khi đo
+  restart: never
+client:
+  vllm_cmd: "/root/venv/bin/vllm bench serve"
+  python: /root/venv/bin/python
+  tokenizer: /root/models/Qwen3-30B-A3B-GPTQ-Int4
+  sampling: {temperature: 0, ignore_eos: true}
+warmup: {requests: 4, max_tokens: 16, path: data/workloads/w2.jsonl}
+software:
+  vllm: 0.30.0
+  torch: 2.13.0+cu130
+  model: Qwen/Qwen3-30B-A3B-GPTQ-Int4@9b534e4318b7ebc3c961a839f13eb18b1833f441
+  image: nvidia/cuda:13.0.2-devel-ubuntu22.04
+  env: VLLM_SERVER_DEV_MODE=1
+unit_timeout_s: 4200          # 2400 s cửa sổ + tối đa ~660 s chờ request dở + dư
+unit_overhead_s: 25
+price_usd_per_h: 0.30

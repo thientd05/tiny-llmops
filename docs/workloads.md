@@ -178,6 +178,9 @@ lượt đầu trong cửa sổ mang đủ độ dài lịch sử theo trace, nh
 giữ nguyên think time và cấu trúc phiên. Tua nhanh sẽ co think time lại, sai hành vi thật (references D4: phải giữ phân bố thời gian giữa các lượt).
 k ≤ 110 (số ngày của trace). Ngày lấy theo hoán vị cố định theo seed → kịch bản k nằm trong kịch bản k' > k, tải tăng đơn điệu.
 Kiểm tra (2026-10-12): req/giờ đo trong kịch bản sát k × trung bình trace (peak k=40: 8,130 vs 8,333; k=110: 22,130 vs 22,917).
+Một Session ID có thể xuất hiện ở nhiều ngày (người dùng quay lại hội thoại cũ vài ngày sau): mỗi (phiên, ngày) là một phiên riêng,
+lần sau là phiên "quay lại" mang đủ lịch sử (sửa 2026-10-13; sau sửa: peak k=40 8,278 vs 8,334, k=110 22,800 vs 22,917).
+Khi đo (P05), kịch bản k ngày = kịch bản gốc k=110 lọc theo k ngày đầu của hoán vị (giống hệt sinh riêng về phiên, thời điểm, độ dài).
 
 **Goodput W4** = k lớn nhất ở peak mà mọi request trong 30 phút đo đạt SLO chính (TTFT p95 ≤ 10 s, TPOT p95 ≤ 150 ms);
 tìm nhị phân trên k như mục "Cách tìm goodput". Báo cáo quy ra **req/giờ** và **số phiên đang mở** (người dùng hoạt động cùng lúc).

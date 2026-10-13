@@ -1,6 +1,6 @@
 # GĐ1 (phần đầu) — vLLM mặc định làm mốc so sánh (baseline)
 
-> Lập ngày 2026-10-12. P01, P02 xong ngày 2026-10-12. P03, P04 xong 2026-10-13.
+> Lập ngày 2026-10-12. P01, P02 xong ngày 2026-10-12. P03, P04, P05 xong 2026-10-13.
 > Mục đích: đo vLLM ở cấu hình mặc định trên L4 với đúng 3 workload của dự án, để mọi bước tune / đổi thư viện /
 > custom CUDA về sau có một mốc cố định để so. Phần "tune tối đa" của GĐ1 sẽ lập plan riêng sau khi có báo cáo P07.
 
@@ -23,7 +23,7 @@
 | P02 | [Bộ sinh workload W1/W2/W3](02-bo-sinh-workload/plan.md) | Không | 0 | **Xong** 2026-10-12 | [đọc ngay](02-bo-sinh-workload/doc-ngay.md) · [đầy đủ](02-bo-sinh-workload/bao-cao.md) |
 | P03 | [Công cụ chạy benchmark + kiểm tra rút gọn](03-cong-cu-benchmark/plan.md) | Có | ~1 h (thực tế 0.84 h ≈ 7k VND) | **Xong** 2026-10-13 | [đọc ngay](03-cong-cu-benchmark/doc-ngay.md) · [đầy đủ](03-cong-cu-benchmark/bao-cao.md) |
 | P04 | [Đo baseline đầy đủ W1/W2/W3](04-do-baseline-day-du/plan.md) (lưới thích nghi + tìm nhị phân goodput) | Có | ~6.5 h → ước lại từ P03 ~5.1 h (thực tế 4.44 h, ≈ 32.7k VND) | **Xong** 2026-10-13 | [đọc ngay](04-do-baseline-day-du/doc-ngay.md) · [đầy đủ](04-do-baseline-day-du/bao-cao.md) |
-| P05 | [W4: tải giống thật (phiên người dùng BurstGPT)](05-w4-tai-giong-that/plan.md) | Có | ~6.5 h → ước lại từ P04: ~5–5.6 h | Chưa làm | — |
+| P05 | [W4: tải giống thật (phiên người dùng BurstGPT)](05-w4-tai-giong-that/plan.md) | Có | ~6.5 h → ước lại ~4.4–5.4 h (thực tế 4.97 h, ≈ 49.2k VND) | **Xong** 2026-10-13 | [đọc ngay](05-w4-tai-giong-that/doc-ngay.md) · [đầy đủ](05-w4-tai-giong-that/bao-cao.md) |
 | P06 | [Chất lượng baseline + output tham chiếu](06-chat-luong-baseline/plan.md) | Có | ~1.5 h | Chưa làm | — |
 | P07 | [Tổng hợp baseline, cập nhật kế hoạch](07-tong-hop-baseline/plan.md) | Không | 0 | Chưa làm | — |
 | | **Tổng** | | **~16.25 h ≈ 166k VND** | | |

@@ -1,0 +1,2 @@
+dừng sớm: 131 request chắc chắn trượt TTFT, 12 trượt TPOT ≥ ngưỡng 130 (5% × 2542 lượt tối đa + 2)
+scenario: 1084 phiên, 1666 request (1099 trong cửa sổ đo), 48 lỗi; dừng sớm: 131 request chắc chắn trượt TTFT, 12 trượt TPOT ≥ ngưỡng 130 (5% × 2542 lượt tối đa + 2)

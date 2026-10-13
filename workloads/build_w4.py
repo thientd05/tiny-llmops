@@ -206,14 +206,17 @@ def build_scenario(R, segment, k, seed):
 
     # Lấy mọi phiên có lượt nằm trong cửa sổ, kể cả phiên bắt đầu trước đó (người đang chat dở).
     # Phiên bắt đầu trước: lượt đầu trong cửa sổ gửi kèm đủ độ dài lịch sử theo trace (resumed).
+    # Một Session ID có thể xuất hiện ở cửa sổ của nhiều ngày (người dùng quay lại hội thoại cũ vài ngày sau):
+    # mỗi (phiên, ngày) là một phiên riêng của kịch bản → kịch bản k ngày = kịch bản gốc lọc theo ngày, không mất lượt.
     chosen = []
     for s in sessions:
+        seen = set()
         for j, t in enumerate(s["ts"]):
             d = int(t // 86400) - day0
-            if d in windows and windows[d] <= t < windows[d] + span:
+            if d in windows and d not in seen and windows[d] <= t < windows[d] + span:
                 chosen.append((t - windows[d], d, j, s))
-                break
-    chosen.sort(key=lambda x: (x[0], x[3]["sid"]))
+                seen.add(d)
+    chosen.sort(key=lambda x: (x[0], x[3]["sid"], x[1]))
 
     rng = random.Random(seed * 1000 + 7)
     chat = ChatPicker(read_jsonl(POOL / "chat.jsonl"), rng)
@@ -252,7 +255,7 @@ def build_scenario(R, segment, k, seed):
             turns.append({"think_s": round(think, 3), "user": text, "user_tokens": n,
                           "prompt_budget": max(budget, n + ovh_first), "max_tokens": max_tokens,
                           "trace_t": round(float(s["ts"][j] - w0), 3), "trace_req": req})
-        out.append({"sid": s["sid"], "day": d, "start_s": round(float(start), 3), "resumed": bool(first > 0),
+        out.append({"sid": f"{s['sid']}@d{d}", "day": d, "start_s": round(float(start), 3), "resumed": bool(first > 0),
                     "turns": turns})
 
     OUT.mkdir(parents=True, exist_ok=True)
@@ -265,6 +268,10 @@ def build_scenario(R, segment, k, seed):
     summary["req_per_hour_expected"] = round(float(mean[hour]) * k, 1)  # k × trung bình trace ở giờ này
     summary["sha256"] = sha256(path)
     (OUT / f"{name}.summary.json").write_text(json.dumps(summary, indent=2, ensure_ascii=False) + "\n")
+    # sha256 của kịch bản: bench/sweep.py (chế độ w4) so với file trên máy thuê trước khi đo
+    m = json.loads(MANIFEST.read_text()) if MANIFEST.exists() else {"seed": SEED}
+    m.setdefault("scenarios", {})[path.name] = summary["sha256"]
+    write_manifest({"scenarios": m["scenarios"]})
     print(json.dumps(summary, indent=2, ensure_ascii=False))
 
 

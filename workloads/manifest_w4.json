@@ -33,5 +33,16 @@
       "sha256": "2299986a07388aa303ec2c41d1131e756db650a39ed6ef9dfe7cc3d7f9a43b8f",
       "license": "CC-BY-4.0"
     }
+  },
+  "scenarios": {
+    "normal-k10-s1.jsonl": "146cc2918c04bb9e4ec4f5e79c3b2aa7ed02fa49f4029df0a6676ac29338612d",
+    "normal-k110-s1.jsonl": "94367d0919f3fce989a0a04c2ae01097077333044c5ada02ea8a6c3446cae759",
+    "peak-k1-s1.jsonl": "143149ef79a1de44ff452ecae53a9d93483b6cd07b87af8bcf268897208fbe30",
+    "peak-k10-s1.jsonl": "a4b5d301275f04c919e6900b912091e96a2b82f21149458267bdaf2bd1fda729",
+    "peak-k110-s1.jsonl": "120bf1302012567f87789097dca3bfef730e0894e2adf105daabbaa7a7162018",
+    "peak-k110-s2.jsonl": "6ef578b91d1b617d6593e8feda6be3032893517fea4acd7b844e7c609a746eb3",
+    "peak-k40-s1.jsonl": "dc30696ea7345304677f3559e1b86a552a45a1bbdb80c374ea7b15696eaa6b75",
+    "peak2-k10-s1.jsonl": "396be71cc3d626267e32d765b34e40178d7831e3cd4b85d6a6e0c9bd17c3b57e",
+    "peak2-k110-s1.jsonl": "d93b12b5ec3a16ea8df14963e88c60bafa92ee26611823accc32da7fa5f2ad5e"
   }
 }

@@ -5,6 +5,22 @@
 
 ---
 
+## #6 — Kịch bản W4 bỏ sót lượt của người dùng quay lại hội thoại ở ngày khác (2026-10-13, P05 chuẩn bị)
+
+**Bối cảnh.** P05 cần kịch bản cho k bất kỳ (tìm nhị phân). Cách chọn: sinh một kịch bản gốc k=110, kịch bản k = lọc theo k ngày đầu
+của hoán vị. Trước khi dùng, kiểm tra cách lọc phải ra đúng kịch bản sinh riêng.
+**Triệu chứng.** Lọc k=10 ra 540 phiên / 1,181 lượt; sinh riêng k=10 ra 554 / 1,221.
+**Nguyên nhân.** Trong BurstGPT, một Session ID có thể xuất hiện ở cửa sổ 15:50–16:30 của nhiều ngày (hội thoại được mở lại vài ngày sau).
+`build_w4.py` chỉ lấy lần xuất hiện **đầu tiên** trong các ngày được chọn. Với k=110, phiên bị gán cho ngày sớm nhất; với k=10,
+gán cho ngày khác → hai cách cho kết quả khác. Lỗi này có từ đầu: kịch bản nào cũng mất các lượt ở ngày sau
+(k=110 đo 22,130 req/giờ, thiếu 3.4% so với kỳ vọng 22,917).
+**Phương án.** (a) mỗi (phiên, ngày) là một phiên riêng; lần sau là phiên "quay lại" mang đủ lịch sử theo trace (đúng hành vi thật);
+(b) bỏ hẳn phiên nhiều ngày — làm mất tải thật.
+**Quyết định.** (a). Sinh lại mọi kịch bản. Sau sửa: lọc = sinh riêng ở k = 1/10/40 và 3 khung giờ; k=110 thiếu còn 0.5%.
+**Chi phí.** ~20 phút làm việc ở local, 0 giờ GPU. Phát hiện trước khi thuê máy nhờ có bước kiểm tra "cách làm mới ra đúng kết quả cũ".
+
+---
+
 ## #5 — TTFT p95 dao động ~20% giữa hai lần đo cùng một điểm (2026-10-13, P03)
 
 **Bối cảnh.** P03 cần mức nhiễu < 5% để quy tắc "kém hơn > 5% thì loại" (CLAUDE.md quy tắc 10) có nghĩa.

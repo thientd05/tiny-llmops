@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 # Thử harness ở local với server giả (không GPU). Dùng `vllm bench serve` 0.30.0 thật (cài bản CPU ở
 # ~/.local/share/vllm-bench-venv, chỉ để gửi tải) → kiểm luôn cờ, định dạng dataset, file kết quả.
-#   bash bench/test_fake.sh OUT_DIR [case...]     case: k100 k5 k40 resume config closed scenario (mặc định: tất cả)
+#   bash bench/test_fake.sh OUT_DIR [case...]     case: k100 k5 k40 resume config closed scenario w4 (mặc định: tất cả)
 set -euo pipefail
 cd "$(dirname "$0")/.."
 OUT=${1:?cần OUT_DIR}; shift
-CASES=${*:-k100 k5 k40 resume config closed scenario}
+CASES=${*:-k100 k5 k40 resume config closed scenario w4}
 PY=.venv/bin/python
 export TMPDIR=${TMPDIR:-$OUT}
 mkdir -p "$OUT"
@@ -70,6 +70,29 @@ for c in $CASES; do
         --out "$D/w4.json.gz" --ignore-eos --temperature 0 --time-scale 0.01
       bash bench/fake_serve.sh --stop
       $PY bench/summarize.py --scenario-check "$D/w4.json.gz" data/workloads/w4/peak-k10-s1.jsonl
+      ;;
+    w4)
+      # chế độ w4 (P05): điểm mốc + tìm k + kiểm tra, thời gian co 100 lần; ngắt giữa một lần chạy (SIGKILL) rồi chạy lại:
+      # đơn vị dở bị xoá và chạy lại, đơn vị đã xong không bị chạy lại
+      D=$OUT/w4; rm -rf "$D"; CFG=bench/configs/test-fake-w4.yaml
+      export FAKE_CAP=${FAKE_CAP:-24}
+      timeout -s KILL 100 $PY bench/sweep.py --config $CFG --out "$D" > "$D.1.log" 2>&1 || echo "lần 1 bị ngắt (SIGKILL), mã $?"
+      echo "sau lần 1: $(ls "$D"/units/*/done.json 2>/dev/null | wc -l) đơn vị xong, $(ls "$D/units" | wc -l) thư mục"
+      $PY bench/sweep.py --config $CFG --out "$D" --status | sed -n '1,40p'
+      stat -c '%Y %n' "$D"/units/*/done.json | sort -k2 > "$D.mtime1"
+      $PY bench/sweep.py --config $CFG --out "$D" > "$D.2.log" 2>&1
+      grep -h "dở dang\|đợt mới\|điểm mốc\|xong toàn bộ" "$D.2.log"
+      stat -c '%Y %n' "$D"/units/*/done.json | sort -k2 > "$D.mtime2"
+      join -1 2 -2 2 "$D.mtime1" "$D.mtime2" | awk '$2 != $3 {bad=1; print "ĐO LẠI NHẦM:", $1} END {exit bad}'
+      echo "lần 2: các đơn vị đã xong không bị chạy lại ✓"
+      bash bench/fake_serve.sh --stop
+      $PY bench/sweep.py --config $CFG --out "$D" --status
+      $PY bench/summarize.py --config $CFG --out "$D" --quiet && sed -n '1,200p' "$D/summary.md"
+      for u in "$D"/units/w4-*; do
+        $PY bench/summarize.py --scenario-check "$u/bench.json.gz" \
+          "$(python3 -c "import json,sys; print(json.load(open('$u/meta.json'))['dataset'])")" | tail -4
+      done
+      unset FAKE_CAP
       ;;
   esac
 done

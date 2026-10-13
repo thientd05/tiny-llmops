@@ -1,0 +1,50 @@
+{
+  "all": {
+    "duration_s": 1042.5608180040726,
+    "e2el_mean_ms": 18595.92842222043,
+    "e2el_p50_ms": 14994.612731039524,
+    "e2el_p95_ms": 79122.03977672578,
+    "e2el_p99_ms": Infinity,
+    "failed": 48,
+    "input_tok_s": 757.9845572106595,
+    "itl_mean_ms": 61.31189518259851,
+    "itl_p50_ms": 53.808,
+    "itl_p95_ms": 92.61344999999956,
+    "itl_p99_ms": 344.2212500000004,
+    "mean_in": 751.8981921979067,
+    "mean_out": 267.47764034253095,
+    "n_requests": 1099,
+    "output_tok_s": 269.6427826035007,
+    "req_s": 1.008094666373597,
+    "tpot_mean_ms": 64.75597387739562,
+    "tpot_p50_ms": 63.00086524805963,
+    "tpot_p95_ms": 191.2483416351029,
+    "tpot_p99_ms": Infinity,
+    "ttft_mean_ms": 2257.679221200155,
+    "ttft_p50_ms": 322.052538045682,
+    "ttft_p95_ms": 30939.377627009482,
+    "ttft_p99_ms": Infinity
+  },
+  "slo": {
+    "tpot_ms": 150,
+    "ttft_ms": 10000
+  },
+  "verdict": false,
+  "w4": {
+    "aborted": {
+      "certain_fail_tpot": 12,
+      "certain_fail_ttft": 131,
+      "reason": "dừng sớm: 131 request chắc chắn trượt TTFT, 12 trượt TPOT ≥ ngưỡng 130 (5% × 2542 lượt tối đa + 2)",
+      "t_trace_s": 1646.3,
+      "threshold": 130
+    },
+    "drain_cut": 0,
+    "lag_max_s": 0.0957,
+    "lag_p50_s": 0.0098,
+    "lag_p99_s": 0.05328299999999999,
+    "req_per_hour": 2198.0,
+    "requests_in_window": 1099,
+    "requests_sent": 1666,
+    "sessions": 1084
+  }
+}

@@ -1,0 +1,1 @@
+{"t_trace_s": 2396.8, "window_end_s": 2400, "sent": 837, "sent_in_window": 628, "in_flight": 0, "certain_fail_ttft": 0, "certain_fail_tpot": 0, "abort_threshold": 44, "n_upper": 838, "aborted": null, "final": true}

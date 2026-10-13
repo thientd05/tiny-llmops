@@ -1,0 +1,113 @@
+{
+  "client_cmd": [
+    "/root/venv/bin/python",
+    "/root/td/bench/session_client.py",
+    "scenario",
+    "--scenario",
+    "/root/td/data/workloads/w4/normal-k110-s1.jsonl",
+    "--days",
+    "52,78,61,43,62,6,56,97,79,34,108,5,90,47,19,45,8,24",
+    "--tokenizer",
+    "/root/models/Qwen3-30B-A3B-GPTQ-Int4",
+    "--base-url",
+    "http://localhost:8000",
+    "--model",
+    "Qwen/Qwen3-30B-A3B-GPTQ-Int4",
+    "--out",
+    "/root/results/p05/units/w4-normal-s1-k18-r1/bench.json.gz",
+    "--progress",
+    "/root/results/p05/units/w4-normal-s1-k18-r1/progress.json",
+    "--slo-ttft-ms",
+    "10000",
+    "--slo-tpot-ms",
+    "150",
+    "--abort-certain-fail",
+    "--ignore-eos",
+    "--temperature",
+    "0"
+  ],
+  "client_s": 2406.8,
+  "config": "bench/configs/w4.yaml",
+  "dataset": "/root/td/data/workloads/w4/normal-k110-s1.jsonl",
+  "end": "2026-10-13T11:43:38.473534+00:00",
+  "git_commit": "179023503b32ac6f7d6690c2bdfdb41c5f9c7f45+dirty(P05 chuẩn bị local, chưa commit)",
+  "hostname": "1f8ed1d4765c",
+  "machine": "host=506934 machine=150535 instance=55701260",
+  "run_id": "w4-normal-s1-k18-r1",
+  "server": {
+    "cmd": "bash scripts/serve_default.sh /root/results/p05/server/start-002.log --max-model-len 16384 --enable-prompt-tokens-details",
+    "init_engine_s": 29.82,
+    "kv_cache_gib": 3.48,
+    "kv_cache_tokens": 38032,
+    "load_weights_s": 20.46,
+    "log": "server/start-002.log",
+    "max_concurrency_at": [
+      16384,
+      2.32
+    ],
+    "ready_s": 97.3,
+    "reason": "bỏ lần khởi động compile từ đầu",
+    "reused_running_server": false,
+    "start_index": 2,
+    "time": "2026-10-13T07:48:55+00:00",
+    "torch_compile_s": 0.37
+  },
+  "spec": {
+    "abort_certain_fail": true,
+    "client": "session",
+    "days": [
+      52,
+      78,
+      61,
+      43,
+      62,
+      6,
+      56,
+      97,
+      79,
+      34,
+      108,
+      5,
+      90,
+      47,
+      19,
+      45,
+      8,
+      24
+    ],
+    "k": 18,
+    "repeat": 1,
+    "sampling": {
+      "ignore_eos": true,
+      "temperature": 0
+    },
+    "scenario": "normal-s1",
+    "scenario_sha256": "94367d0919f3fce989a0a04c2ae01097077333044c5ada02ea8a6c3446cae759",
+    "server_start": "bash scripts/serve_default.sh {log} --max-model-len 16384 --enable-prompt-tokens-details",
+    "slo": {
+      "tpot_ms": 150,
+      "ttft_ms": 10000
+    },
+    "software": {
+      "env": "VLLM_SERVER_DEV_MODE=1",
+      "image": "nvidia/cuda:13.0.2-devel-ubuntu22.04",
+      "model": "Qwen/Qwen3-30B-A3B-GPTQ-Int4@9b534e4318b7ebc3c961a839f13eb18b1833f441",
+      "torch": "2.13.0+cu130",
+      "vllm": "0.30.0"
+    },
+    "time_scale": 1.0,
+    "warmup": {
+      "max_tokens": 16,
+      "path": "data/workloads/w2.jsonl",
+      "requests": 4
+    },
+    "window": {
+      "measure_s": 1800,
+      "warmup_s": 600
+    },
+    "workload": "w4"
+  },
+  "spec_sha256": "766c69779d99e0d766dde4b28eacd174dc6b32d548179fd374c7ccceaa6a4e41",
+  "start": "2026-10-13T11:03:31.674978+00:00",
+  "unit_s": 2409.17
+}

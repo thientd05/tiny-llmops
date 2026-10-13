@@ -5,6 +5,127 @@
 
 ---
 
+## 2026-10-13 — P05: W4 tải giống thật trên L4 (vLLM 0.30.0 mặc định)
+
+Báo cáo: [gd1-vllm-baseline/05-w4-tai-giong-that/bao-cao.md](gd1-vllm-baseline/05-w4-tai-giong-that/bao-cao.md).
+Kết quả thô: `results/gd1/05-w4-tai-giong-that/20261013-p05/` (`summary.md`, `summary.json`, `cost.json`, `units/<id>/`).
+Hình: `docs/gd1-vllm-baseline/05-w4-tai-giong-that/hinh/`.
+
+| Trường | Giá trị |
+|---|---|
+| Thời gian | thuê 14:28:16 → destroy 19:26:08 (13/10, +07) = 4.97 h |
+| Máy | instance 55701260, **host 506934 / machine 150535** (cùng host với P03/P04, khác machine 116596), $0.372/h trọn gói |
+| Chi phí | tín dụng $8.339 → $6.461 = **$1.878 ≈ 49,200 VND** (≈ $0.378/h ≈ 9,900 VND/h) |
+| Checklist máy | L4 23,034 MiB, driver 615.71.09, 72 W, 140 GB đĩa, 125 GB RAM, 40 vCPU, nvcc 13.0.88; **ncu: ERR_NVGPUCTRPERM** (như mọi lần trên host 506934) |
+| Cài đặt | tải model 179 s, cài vLLM 187 s |
+| Phần mềm | vLLM 0.30.0, torch 2.13.0+cu130, transformers 5.19.0, model `Qwen/Qwen3-30B-A3B-GPTQ-Int4@9b534e43`, image `nvidia/cuda:13.0.2-devel-ubuntu22.04` |
+| Server | `serve_default.sh --max-model-len 16384 --enable-prompt-tokens-details` (cờ thứ hai chỉ thêm số token trúng cache vào câu trả lời) |
+| Lần khởi động | #1 compile từ đầu 60.8 s → KV **29,472** token → harness tự bật lại; #2 compile 0.37 s → KV **38,032** token (P04: 37,264); #3 dùng lại #2 |
+| Cấu hình | `bench/configs/w4.yaml` (chế độ w4): khởi đầu nóng k = 16 / 24, 1 lần chạy mỗi mức, dừng sớm khi chắc chắn trượt; kiểm tra ở k = lo; thêm `extra: [[peak-s2, 16]]` sau khi peak-s2 trượt ở 18 |
+| Lệnh | `bash scripts/remote_bench.sh bench/configs/w4.yaml /root/results/p05` (tmux); local: `summarize.py --config bench/configs/w4.yaml --out <dir>`, `w4_report.py ... --price-vnd-h 9752` |
+
+**Điểm mốc W2 / 16 user** (vllm bench serve, 100 request, seed 1001–1003):
+
+| | r1 | r2 | r3 | P04 (machine 116596) |
+|---|---|---|---|---|
+| TTFT p95 (ms) | 5,714 | 4,961 | 5,722 | 6,303 / 4,866 / 6,025 |
+| TPOT p95 (ms) | 87.9 | 92.1 | 88.7 | 89.6 / 92.7 / 89.9 |
+| tok/s ra | 175 | 173 | 170 | 171 / 169 / 167 |
+
+→ máy này nhanh hơn máy P04 ~2% (throughput), KV nhiều hơn 2%. So sánh được.
+
+**W4** (SLO chính TTFT p95 ≤ 10 s, TPOT p95 ≤ 150 ms; chỉ request gửi trong 30 phút đo; "dừng sớm" = số là của phần đã chạy):
+
+| Lần chạy | Bắt đầu (+07) | Phút | Phiên | Request đo | req/giờ | Phiên mở p50 | TTFT p50 / p95 / p99 (ms) | TPOT p50 / p95 (ms) | tok/s ra | Kết quả |
+|---|---|---|---|---|---|---|---|---|---|---|
+| peak-s1 k=16 | 14:54:56 | 40.6 | 916 | 1,628 | 3,256 | 342 | 238 / 5,492 / 25,516 | 47.4 / 76.1 | 243 | **đạt** |
+| peak-s1 k=24 | 15:35:31 | 18.9 | 1,257 | 617 | — | — | 459 / ∞ / ∞ | 74.0 / ∞ | 287 | trượt, dừng sớm ở t = 1121 s (153 chắc trượt TTFT) |
+| peak-s1 k=20 | 15:54:25 | 27.7 | 1,084 | 1,099 | — | — | 322 / 30,939 / ∞ | 63.0 / 191.2 | 270 | trượt, dừng sớm ở t = 1646 s (131 TTFT, 12 TPOT) |
+| **peak-s1 k=18** | 16:22:05 | 40.7 | 974 | 1,738 | **3,476** | **363** | 272 / **9,109** / 25,258 | 55.7 / **81.9** | 259 | **đạt → goodput 18 (20 trượt)** |
+| peak-s2 k=18 | 17:02:45 | 20.3 | 1,085 | 685 | — | — | 508 / ∞ / ∞ | 70.0 / ∞ | 289 | trượt, dừng sớm ở t = 1206 s |
+| peak2-s1 k=18 (10h) | 17:23:04 | 40.5 | 817 | 1,555 | 3,110 | 288 | 165 / 617 / 1,485 | 31.9 / 53.7 | 194 | đạt |
+| normal-s1 k=18 (13h) | 18:03:31 | 40.2 | 350 | 628 | 1,256 | 117 | 127 / 564 / 996 | 18.5 / 36.4 | 96 | đạt |
+| peak-s2 k=16 (thêm) | 18:44:21 | 40.7 | 972 | 1,770 | 3,540 | 377 | 224 / 872 / 4,313 | 47.3 / 73.1 | 259 | đạt → seed 2: 16 (18 trượt) |
+
+Phía server (trung vị theo giây trong lần chạy; preempt và trúng prefix tính hiệu /metrics):
+
+| Lần chạy | đang chạy p50 / max | chờ max | KV max % | giây KV ≥ 97% | giây có hàng đợi | preempt | trúng prefix (server) |
+|---|---|---|---|---|---|---|---|
+| peak-s1 k=16 | 11 / 33 | 25 | 100 | 4% | 7% | 42 | 4.4% |
+| peak-s1 k=18 | 14 / 32 | 29 | 100 | 8% | 11% | 80 | 3.0% |
+| peak-s2 k=16 | 13 / 33 | 16 | 100 | 3% | 4% | 37 | 3.7% |
+| peak2 k=18 | 5 / 26 | 6 | 83 | 0% | 0% | 0 | 9.9% |
+| normal k=18 | 2 / 11 | 1 | 85 | — | — | 0 | 14.5% |
+
+- **Goodput W4 (peak 16h, seed 1) = 18 (20 trượt)** ≈ 3,476 req/giờ, 363 phiên đang mở, 14 request đang chạy trên server (p50).
+  Bộ ngày khác (seed 2): **16 (18 trượt)** → lệch 1 bước tìm. SLO phụ (2 s / 100 ms) và TTFT ≤ 5 s: < 16. TTFT ≤ 20 s: ≥ 18.
+- **TTFT vượt SLO theo đợt:** peak-s1 k=18, TTFT p95 theo phút > 10 s chỉ ở phút 7–8 và 16–17 của cửa sổ đo (Hình 2). Phút 16:
+  85,318 token prompt (trung vị 43,872/phút), 4 request ≥ 4k; số request 65 (bình thường 41–73).
+- **Request ngắn (< 1k) khi có request ≥ 4k đang chờ token đầu:** TTFT p95 26.6 s vs 1.4 s (k=16), 32.2 s vs 4.2 s (k=18).
+  40–70% request ngắn có TTFT > 10 s được gửi đúng lúc có request ≥ 4k đang chờ (21/30 ở k=16, 28/53 ở k=18).
+- **Prefix cache theo think time** (lượt sau không bỏ lịch sử, phần lịch sử trúng cache trung bình): think < 30 s: 25% (peak k=18),
+  51% (normal); 30–120 s: 0% / 40%; ≥ 120 s: 0% (98–100% lượt không trúng token nào). Phần câu trả lời của lượt trước (p50 37% lịch sử)
+  **không bao giờ trúng** (0% lượt có cached > prompt lượt trước + 16).
+- **Gửi trễ của client** (giây thật): p50 0.01, p99 ≤ 0.33, max ≤ 0.93 (peak2). 0 request bị cắt sau cửa sổ.
+- **Chi phí** (`cost.json`, giá 9,752 VND/h = $0.372 × 26,200): k = 18 phục vụ 10.40 triệu token ra / ngày (theo 24 giờ của trace) →
+  **22,510 VND / 1 triệu token ra** nếu thuê cả ngày. Nếu cả ngày như giờ cao điểm: 10,322. Token ra đo được / trace × k:
+  16h 944,804 / 998,074 (−5%), 10h 704,978 / 800,261 (−12%), 13h 344,102 / 462,638 (−26%, cửa sổ 13:00–13:30 vắng hơn cả giờ).
+---
+
+## 2026-10-13 — P05 chuẩn bị local: kịch bản W4 sửa phiên nhiều ngày, harness W4 thử với server giả (không GPU)
+
+Plan: [gd1-vllm-baseline/05-w4-tai-giong-that/plan.md](gd1-vllm-baseline/05-w4-tai-giong-that/plan.md) mục "Chuẩn bị local".
+Máy: laptop (local), `.venv`, tokenizer Qwen3 (`data/raw/qwen3-tokenizer`). Server giả: `bench/fake_server.py`.
+
+**Sửa `build_w4.py` (phiên nhiều ngày).** Một Session ID của BurstGPT có thể xuất hiện ở cửa sổ của nhiều ngày (người dùng quay lại
+hội thoại cũ vài ngày sau). Bản cũ chỉ lấy lần xuất hiện đầu → mất lượt ở ngày sau, và lọc kịch bản gốc theo ngày lệch với sinh riêng
+(peak k=10: 540 vs 554 phiên). Bản mới: mỗi (phiên, ngày) là một phiên của kịch bản (`sid` = `<Session ID>@d<ngày>`).
+Mọi kịch bản sinh lại (thay số ở mục "Phân tích trace BurstGPT_3 … Kịch bản" bên dưới; số cũ giữ nguyên làm lịch sử).
+Lệnh: `.venv/bin/python workloads/build_w4.py scenario --segment <khung> --k <k> --seed <s>`; sha256 ở `workloads/manifest_w4.json` mục `scenarios`.
+
+| Kịch bản | Phiên (quay lại) | Request tổng / đo | req/giờ đo / kỳ vọng | Phiên mở p50 / max | prompt p50 / p90 / p99 | <1k / 1–2k / 2–4k / 4–8k / ≥8k (%) | max_tokens p50 / p90 | sha256 |
+|---|---|---|---|---|---|---|---|---|
+| **peak k=110 s1** (gốc) | 6,170 (2,674) | 15,137 / 11,400 | 22,800 / 22,917 | 2,352 / 2,469 | 528 / 2362 / 5324 | 67.9 / 18.6 / 11.4 / 1.8 / 0.4 | 183 / 675 | `120bf130…` |
+| **peak k=110 s2** (gốc) | 6,170 (2,674) | 15,137 / 11,400 | 22,800 / 22,917 | 2,352 / 2,469 | 528 / 2367 / 5304 | 67.9 / 18.5 / 11.4 / 1.8 / 0.4 | 183 / 675 | `6ef578b9…` |
+| **peak2 k=110 s1** (gốc) | 4,925 (1,348) | 12,262 / 9,435 | 18,870 / 19,807 | 1,869 / 1,928 | 390 / 1923 / 5109 | 74.1 / 16.4 / 7.8 / 1.4 / 0.3 | 161 / 604 | `d93b12b5…` |
+| **normal k=110 s1** (gốc) | 2,146 (837) | 5,082 / 3,869 | 7,738 / 10,156 | 751 / 799 | 504 / 2457 / 5946 | 66.5 / 18.6 / 11.7 / 2.5 / 0.6 | 212 / 686 | `94367d09…` |
+| peak k=1 | 17 (10) | 43 / 32 | 64 / 208 | 8 / 10 | 831 / 2766 / 3754 | 62.5 / 18.8 / 18.8 / 0 / 0 | 170 / 658 | `143149ef…` |
+| peak k=10 | 559 (223) | 1,231 / 965 | 1,930 / 2,083 | 201 / 226 | 422 / 2157 / 5039 | 72.0 / 16.3 / 9.3 / 2.2 / 0.2 | 173 / 698 | `a4b5d301…` |
+| peak k=40 | 2,248 (985) | 5,394 / 4,139 | 8,278 / 8,334 | 848 / 904 | 516 / 2414 / 6143 | 68.3 / 17.5 / 11.5 / 2.0 / 0.7 | 173 / 676 | `dc30696e…` |
+| peak2 k=10 | 462 (145) | 1,210 / 927 | 1,854 / 1,801 | 159 / 176 | 389 / 1720 / 6606 | 78.1 / 14.6 / 5.3 / 1.4 / 0.6 | 131 / 509 | `396be71c…` |
+| normal k=10 | 196 (82) | 499 / 401 | 802 / 923 | 69 / 74 | 501 / 2439 / 4948 | 64.1 / 17.7 / 15.5 / 2.5 / 0.2 | 190 / 662 | `146cc291…` |
+
+- peak k=110: thiếu so với kỳ vọng còn 0.5% (bản cũ 3.4%).
+- normal (13h) đo thấp hơn kỳ vọng 24%. Kỳ vọng tính trên cả giờ 13:00–14:00, còn cửa sổ đo là 13:00–13:30, mà nửa đầu giờ 13 vắng hơn
+  (nghỉ trưa). Đây là đặc điểm của trace, không phải lỗi.
+- Hai kịch bản gốc peak s1 / s2 chứa cùng 110 ngày, chỉ khác nội dung tin nhắn và thứ tự ngày (hoán vị theo seed). Ở k = lo, s2 lấy bộ ngày khác s1.
+- **Lọc kịch bản gốc theo k ngày đầu = sinh riêng k** (peak k=1/10/40, peak2 k=10, normal k=10): cùng số phiên, cùng phiên,
+  cùng thời điểm, think time, độ dài trace, max_tokens. Chỉ 1–2% lượt khác ngân sách prompt (8–103 lượt), là các lượt có độ dài tin nhắn
+  lấy ngẫu nhiên (client gốc đã cắt lịch sử).
+
+**Thử harness W4 với server giả** (`bash bench/test_fake.sh <dir> w4`, cấu hình `bench/configs/test-fake-w4.yaml`: thời gian co 100 lần,
+server giả hàng đợi 24 chỗ, SLO co theo 100 ms / 3 ms):
+
+| Kiểm tra | Kết quả |
+|---|---|
+| Tìm k (khởi đầu nóng 16 / 24) | 16 đạt → 24 trượt (dừng sớm sau 204 s trace của cửa sổ đo) → 20 đạt → 22 trượt (dừng sớm) → **20 (22 trượt)**, rồi tự chạy peak-s2 và normal ở k = 20 |
+| Ngắt bằng SIGKILL giữa một lần chạy, chạy lại cùng lệnh | thư mục dở bị xoá và chạy lại; 4–5 đơn vị đã xong không bị chạy lại (so mtime `done.json`) |
+| `--scenario-check` 6 lần chạy | 0 lượt gửi sớm hơn "nhận xong + think time" |
+| Điểm mốc W2/16 (vllm bench serve bản CPU) | chạy trước W4, đúng 1 đơn vị |
+| Chạy lại tổng hợp P04 bằng `bench/common.py` mới | `summary.md` giống hệt (trừ dòng đường dẫn) |
+| `bench/test_search.py`, `workloads/test_w4_session.py`, `test_fake.sh k40 config scenario` | đều OK |
+
+**Tải CPU của client** (`session_client.py scenario`, peak k=24, thời gian co **10 lần** → 12.0 request/giây, gấp ~10 lần tải thật ở k=24;
+server giả 256 chỗ, 5 ms/token):
+
+| Lần | Thời gian | CPU client | Gửi trễ so với lịch (giây thật) p50 / p99 / max | Ghi chú |
+|---|---|---|---|---|
+| 1 | 9:55 | 9% (47.8 s) | 0.005 / 1.02 / 3.5 | phần phát lại xong ở giây 245; đợt gửi trễ dồn ở t ≈ 107 s và thời gian thừa trùng lúc phiên làm việc bị ngắt → coi là tiến trình bị dừng tạm, không dùng |
+| 2 | **4:07** | 19% (41.9 s) | **0.004 / 0.079 / 0.31** | xong ở giây 243.7 (cửa sổ 240 s); 0 lượt gửi sớm, 0 lỗi |
+
+→ Client không phải điểm nghẽn ở tải P05 (dự kiến k ≈ 16–24 → 1–1.5 request/giây).
+---
+
 ## 2026-10-13 — P04: baseline đầy đủ W1/W2/W3 (vLLM 0.30.0 mặc định, L4)
 
 Báo cáo: [gd1-vllm-baseline/04-do-baseline-day-du/bao-cao.md](gd1-vllm-baseline/04-do-baseline-day-du/bao-cao.md).

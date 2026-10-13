@@ -1,0 +1,41 @@
+[07:42:01] điểm mốc: w2-c16-r1, w2-c16-r2, w2-c16-r3
+[07:42:01] server start (chưa chạy): bash scripts/serve_default.sh /root/results/p05/server/start-001.log --max-model-len 16384 --enable-prompt-tokens-details
+[07:47:15] server ready sau 314 s, KV cache = 29472 token
+[07:47:15] server vừa compile từ đầu (61 s > 10 s) → khởi động lại trước khi đo
+[07:47:15] server stop: bash scripts/stop_server.sh
+server đã tắt (pid 1289)
+[07:47:18] server start (bỏ lần khởi động compile từ đầu): bash scripts/serve_default.sh /root/results/p05/server/start-002.log --max-model-len 16384 --enable-prompt-tokens-details
+[07:48:55] server ready sau 97 s, KV cache = 38032 token
+[07:48:55] w2-c16-r1: N=16, 100 request, seed 1001, client vllm
+[07:50:53] w2-c16-r1: xong sau 116 s — TTFT p95 5714 ms, TPOT p95 87.9 ms, 175 tok/s ra, lỗi 0 → ĐẠT (cửa sổ all)
+[07:50:53] w2-c16-r2: N=16, 100 request, seed 1002, client vllm
+[07:52:49] w2-c16-r2: xong sau 113 s — TTFT p95 4961 ms, TPOT p95 92.1 ms, 173 tok/s ra, lỗi 0 → ĐẠT (cửa sổ all)
+[07:52:49] w2-c16-r3: N=16, 100 request, seed 1003, client vllm
+[07:54:53] w2-c16-r3: xong sau 122 s — TTFT p95 5722 ms, TPOT p95 88.7 ms, 170 tok/s ra, lỗi 0 → ĐẠT (cửa sổ all)
+[07:54:53] đợt mới: w4-peak-s1-k16-r1, w4-peak-s1-k24-r1
+[07:54:53] w4-peak-s1-k16-r1: peak-k110-s1.jsonl, k=16 ngày, cửa sổ 600 + 1800 s
+[08:35:29] w4-peak-s1-k16-r1: xong sau 2433 s — 1628 request trong cửa sổ, TTFT p95 5492 ms, TPOT p95 76.1 ms, lỗi 0 → ĐẠT
+[08:35:29] w4-peak-s1-k24-r1: peak-k110-s1.jsonl, k=24 ngày, cửa sổ 600 + 1800 s
+[08:54:23] w4-peak-s1-k24-r1: xong sau 1131 s — 617 request trong cửa sổ, TTFT p95 inf ms, TPOT p95 inf ms, lỗi 67 — DỪNG SỚM → TRƯỢT
+[08:54:23] đợt mới: w4-peak-s1-k20-r1
+[08:54:23] w4-peak-s1-k20-r1: peak-k110-s1.jsonl, k=20 ngày, cửa sổ 600 + 1800 s
+[09:22:03] w4-peak-s1-k20-r1: xong sau 1658 s — 1099 request trong cửa sổ, TTFT p95 30939 ms, TPOT p95 191.2 ms, lỗi 48 — DỪNG SỚM → TRƯỢT
+[09:22:03] đợt mới: w4-peak-s1-k18-r1
+[09:22:03] w4-peak-s1-k18-r1: peak-k110-s1.jsonl, k=18 ngày, cửa sổ 600 + 1800 s
+[10:02:43] w4-peak-s1-k18-r1: xong sau 2437 s — 1738 request trong cửa sổ, TTFT p95 9109 ms, TPOT p95 81.9 ms, lỗi 0 → ĐẠT
+[10:02:43] đợt mới: w4-peak-s2-k18-r1, w4-peak2-s1-k18-r1, w4-normal-s1-k18-r1
+[10:02:43] w4-peak-s2-k18-r1: peak-k110-s2.jsonl, k=18 ngày, cửa sổ 600 + 1800 s
+[10:23:02] w4-peak-s2-k18-r1: xong sau 1217 s — 685 request trong cửa sổ, TTFT p95 inf ms, TPOT p95 inf ms, lỗi 49 — DỪNG SỚM → TRƯỢT
+[10:23:02] w4-peak2-s1-k18-r1: peak2-k110-s1.jsonl, k=18 ngày, cửa sổ 600 + 1800 s
+[11:03:29] w4-peak2-s1-k18-r1: xong sau 2425 s — 1555 request trong cửa sổ, TTFT p95 617 ms, TPOT p95 53.7 ms, lỗi 0 → ĐẠT
+[11:03:29] w4-normal-s1-k18-r1: normal-k110-s1.jsonl, k=18 ngày, cửa sổ 600 + 1800 s
+[11:43:38] w4-normal-s1-k18-r1: xong sau 2407 s — 628 request trong cửa sổ, TTFT p95 564 ms, TPOT p95 36.4 ms, lỗi 0 → ĐẠT
+[11:43:38] xong toàn bộ — tìm k: done, goodput W4 18 (20 trượt)
+REMOTE_BENCH_DONE 2026-10-13T11:43:44+00:00
+[11:44:19] đợt mới: w4-peak-s2-k16-r1
+[11:44:19] server start (chưa chạy): bash scripts/serve_default.sh /root/results/p05/server/start-003.log --max-model-len 16384 --enable-prompt-tokens-details
+[11:44:19] server ready sau 0 s, KV cache = 38032 token (dùng lại server đang chạy)
+[11:44:19] w4-peak-s2-k16-r1: peak-k110-s2.jsonl, k=16 ngày, cửa sổ 600 + 1800 s
+[12:25:03] w4-peak-s2-k16-r1: xong sau 2442 s — 1770 request trong cửa sổ, TTFT p95 872 ms, TPOT p95 73.1 ms, lỗi 0 → ĐẠT
+[12:25:03] xong toàn bộ — tìm k: done, goodput W4 18 (20 trượt)
+REMOTE_BENCH_DONE 2026-10-13T12:25:12+00:00

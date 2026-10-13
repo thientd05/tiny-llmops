@@ -18,6 +18,16 @@ Kịch bản (scenario): lượt đầu của mỗi phiên gửi đúng `start_s
 prompt = lịch sử thật (gồm câu trả lời server vừa sinh) + tin nhắn mới qua workloads/w4_session.assemble.
 Chỉ request gửi trong [warmup_s, warmup_s + measure_s) được đánh dấu `in_window`; hết cửa sổ thì không gửi lượt mới,
 các request đang chạy được chờ xong. `--time-scale` < 1 chỉ dùng để thử ở local với server giả (co mọi mốc thời gian).
+- `--days d1,d2,...`: chỉ phát các phiên của những ngày này. Kịch bản k ngày = kịch bản gốc k=110 lọc theo k ngày đầu của
+  hoán vị (summary `days`), nên kịch bản k nằm trọn trong kịch bản k' > k, kể cả nội dung tin nhắn (P05).
+- Có `--slo-ttft-ms` / `--slo-tpot-ms`:
+  - chờ request còn dở sau cửa sổ tối đa `drain` = TTFT SLO + max_tokens lớn nhất × TPOT SLO + 30 s. Request đạt SLO
+    chắc chắn xong trước mốc này; request bị cắt chắc chắn đã trượt SLO → ghi lỗi (tính như vô cùng, giống request lỗi).
+  - `--abort-certain-fail`: dừng sớm khi số request trong cửa sổ **chắc chắn** trượt (TTFT hoặc TPOT) vượt
+    5% × (số lượt tối đa của kịch bản) + 2: khi đó p95 của lần chạy chắc chắn vượt SLO, chạy tiếp chỉ tốn tiền GPU.
+    Request chắc chắn trượt TTFT = đã xong với TTFT > SLO, hoặc chưa có token đầu mà đã chờ quá SLO.
+- Ghi thêm mỗi request: `sched` (thời điểm lẽ ra gửi, thời gian trace), `lag` (gửi trễ bao nhiêu giây so với lịch,
+  gồm thời gian ghép prompt), `cached` (token prompt trúng prefix cache, cần server bật --enable-prompt-tokens-details).
 """
 
 import argparse
@@ -25,6 +35,7 @@ import asyncio
 import codecs
 import gzip
 import json
+import math
 import os
 import random
 import sys
@@ -67,10 +78,15 @@ class SSE:
         return msgs
 
 
-async def send(session, url, payload):
-    """Một request stream. Trả về dict: start, ttft, latency, itl, text, out, prompt_len, error."""
-    r = {"start": None, "ttft": 0.0, "latency": 0.0, "itl": [], "text": "", "out": None, "prompt_len": None,
-         "error": ""}
+def new_rec():
+    return {"start": None, "ttft": 0.0, "latency": 0.0, "itl": [], "text": "", "out": None, "prompt_len": None,
+            "cached": None, "error": "", "first_at": None, "chunks": 0}
+
+
+async def send(session, url, payload, r=None):
+    """Một request stream. Điền vào r (tạo mới nếu không có): start, ttft, latency, itl, text, out, prompt_len, cached,
+    error; first_at / chunks cập nhật trong lúc chạy để theo dõi request còn dở."""
+    r = new_rec() if r is None else r
     st = time.perf_counter()
     r["start"] = st
     last = st
@@ -97,16 +113,23 @@ async def send(session, url, payload):
                         if not first:
                             first = True
                             r["ttft"] = t - st
+                            r["first_at"] = t
                         else:
                             r["itl"].append(t - last)
                         last = t
+                        r["chunks"] += 1
                         r["text"] += choices[0].get("text") or ""
                     elif usage := d.get("usage"):
                         r["out"] = usage.get("completion_tokens")
                         r["prompt_len"] = usage.get("prompt_tokens")
+                        r["cached"] = (usage.get("prompt_tokens_details") or {}).get("cached_tokens")
             if not first:
                 r["error"] = "không nhận được chunk nào có token"
             r["latency"] = last - st
+    except asyncio.CancelledError:
+        r["error"] = r["error"] or f"bị huỷ: {r.get('cancel_reason', 'cancel')}"
+        r["latency"] = last - st
+        raise
     except Exception:
         r["error"] = traceback.format_exc()[-1000:]
     return r
@@ -138,6 +161,7 @@ def result_dict(recs, t0, extra=None):
         "start_times": [r["start"] for r in recs],
         "itls": [[round(x, 6) for x in r["itl"]] for r in recs],
         "errors": [r["error"] for r in recs],
+        "cached": [r.get("cached") for r in recs],
         "generated_texts": [r["text"][:200] for r in recs],
         "t0": t0,
     }
@@ -186,6 +210,31 @@ async def run_closed(args):
 
 # ---------- kịch bản W4 ----------
 
+def certain_violations(recs, now, slo_ttft, slo_tpot):
+    """Số request trong cửa sổ chắc chắn trượt TTFT / TPOT tính tới lúc `now` (giây thật, perf_counter)."""
+    v_ttft = v_tpot = 0
+    for r in recs:
+        if not r["in_window"]:
+            continue
+        done = r.get("done", False)
+        if r["error"] and done:
+            v_ttft += 1
+            v_tpot += 1
+            continue
+        if r["first_at"] is None:
+            v_ttft += (now - r["start"]) > slo_ttft
+        else:
+            v_ttft += r["ttft"] > slo_ttft
+            n = r["max_tokens"]
+            if done:
+                out = r["out"] or 0
+                v_tpot += out > 1 and (r["latency"] - r["ttft"]) / (out - 1) > slo_tpot
+            elif n > 1:
+                # ignore_eos → request sinh đúng max_tokens; đã chạy quá slo_tpot × (n − 1) sau token đầu thì chắc trượt
+                v_tpot += (now - r["first_at"]) > slo_tpot * (n - 1)
+    return v_ttft, v_tpot
+
+
 async def run_scenario(args):
     from transformers import AutoTokenizer
     from w4_session import assemble
@@ -196,6 +245,9 @@ async def run_scenario(args):
     count = lambda msgs: len(tok(render(msgs), add_special_tokens=False).input_ids)
 
     sessions = [json.loads(line) for line in open(args.scenario) if line.strip()]
+    if args.days:
+        keep = {int(x) for x in args.days.split(",")}
+        sessions = [s for s in sessions if s["day"] in keep]
     if args.max_sessions:
         sessions = sessions[:args.max_sessions]
     summ = Path(str(args.scenario).removesuffix(".jsonl") + ".summary.json")
@@ -207,6 +259,13 @@ async def run_scenario(args):
     url = args.base_url.rstrip("/") + "/v1/completions"
     loop = asyncio.get_running_loop()
     recs = []
+    n_upper = sum(len(s["turns"]) for s in sessions)  # số request tối đa có thể gửi (mọi lượt của kịch bản)
+    slo = args.slo_ttft_ms is not None and args.slo_tpot_ms is not None
+    slo_ttft, slo_tpot = (args.slo_ttft_ms / 1000, args.slo_tpot_ms / 1000) if slo else (None, None)
+    max_tok = max((t["max_tokens"] for s in sessions for t in s["turns"]), default=1)
+    drain = slo_ttft + max_tok * slo_tpot + 30 * sc if slo else None  # giây thật
+    abort_thr = math.ceil(0.05 * n_upper) + 2
+    state = {"aborted": None, "drain_cut": 0}
 
     async with make_session(0) as session:
         t0 = time.perf_counter()
@@ -217,8 +276,12 @@ async def run_scenario(args):
         async def run_session(s):
             await at(s["start_s"])
             history = []
+            sched = s["start_s"]
             for j, turn in enumerate(s["turns"]):
                 if j > 0:
+                    sched = (time.perf_counter() - t0) / sc + turn["think_s"]
+                    if sched >= end_s:
+                        break  # lượt sau rơi ra ngoài cửa sổ: không chờ think time vô ích
                     await asyncio.sleep(turn["think_s"] * sc)
                 t_rel = (time.perf_counter() - t0) / sc
                 if t_rel >= end_s:
@@ -226,26 +289,85 @@ async def run_scenario(args):
                 msgs, dropped = await loop.run_in_executor(
                     None, assemble, history, turn["user"], turn["prompt_budget"], count)
                 prompt = await loop.run_in_executor(None, render, msgs)
-                r = await send(session, url, payload(args, prompt, turn["max_tokens"]))
-                r.update({"sid": s["sid"], "turn": j, "resumed": bool(s.get("resumed")) and j == 0,
-                          "t_rel": round(t_rel, 3), "in_window": warm <= t_rel < end_s, "dropped": dropped,
-                          "budget": turn["prompt_budget"], "max_tokens": turn["max_tokens"]})
+                r = new_rec()
+                r.update({"sid": s["sid"], "day": s["day"], "turn": j, "resumed": bool(s.get("resumed")) and j == 0,
+                          "t_rel": round(t_rel, 3), "sched": round(sched, 3), "in_window": warm <= t_rel < end_s,
+                          "dropped": dropped, "budget": turn["prompt_budget"], "max_tokens": turn["max_tokens"],
+                          "user_tokens": turn["user_tokens"], "think_s": turn["think_s"] if j > 0 else None})
                 recs.append(r)
+                await send(session, url, payload(args, prompt, turn["max_tokens"]), r)
+                r["done"] = True
+                r["lag"] = round((r["start"] - t0) / sc - sched, 4)
                 if r["error"]:
                     break  # lượt lỗi: dừng phiên (không có câu trả lời để làm lịch sử)
                 history.append((turn["user"], r["text"]))
 
-        await asyncio.gather(*[asyncio.create_task(run_session(s)) for s in sessions])
+        def progress(now, final=False):
+            v_ttft, v_tpot = certain_violations(recs, now, slo_ttft, slo_tpot) if slo else (None, None)
+            p = {"t_trace_s": round((now - t0) / sc, 1), "window_end_s": end_s, "sent": len(recs),
+                 "sent_in_window": sum(r["in_window"] for r in recs),
+                 "in_flight": sum(not r.get("done") for r in recs), "certain_fail_ttft": v_ttft,
+                 "certain_fail_tpot": v_tpot, "abort_threshold": abort_thr, "n_upper": n_upper,
+                 "aborted": state["aborted"], "final": final}
+            if args.progress:
+                write_json_atomic(args.progress, p)
+            return p
 
+        tasks = {asyncio.create_task(run_session(s)) for s in sessions}
+        pending, last_prog = tasks, 0.0
+        while pending:
+            _, pending = await asyncio.wait(pending, timeout=max(0.05, min(5.0, 5.0 * sc * 10)))
+            now = time.perf_counter()
+            reason = None
+            if slo and args.abort_certain_fail:
+                v_ttft, v_tpot = certain_violations(recs, now, slo_ttft, slo_tpot)
+                if max(v_ttft, v_tpot) >= abort_thr:
+                    reason = (f"dừng sớm: {v_ttft} request chắc chắn trượt TTFT, {v_tpot} trượt TPOT "
+                              f"≥ ngưỡng {abort_thr} (5% × {n_upper} lượt tối đa + 2)")
+                    state["aborted"] = {"reason": reason, "t_trace_s": round((now - t0) / sc, 1),
+                                        "certain_fail_ttft": v_ttft, "certain_fail_tpot": v_tpot,
+                                        "threshold": abort_thr}
+            if reason is None and drain is not None and now > t0 + end_s * sc + drain and pending:
+                reason = f"hết thời gian chờ {drain:.0f} s sau cửa sổ"
+                state["drain_cut"] = sum(not r.get("done") for r in recs)
+            if reason:
+                for r in recs:
+                    if not r.get("done"):
+                        r["cancel_reason"] = reason
+                for t in pending:
+                    t.cancel()
+                await asyncio.gather(*pending, return_exceptions=True)
+                pending = set()
+                print(reason, flush=True)
+            if now - last_prog > 30 * sc or not pending:
+                last_prog = now
+                progress(now, final=not pending)
+
+    for r in recs:
+        r.setdefault("lag", None)
+        if not r.get("done"):  # bị huỷ (dừng sớm / hết thời gian chờ): không có câu trả lời đầy đủ
+            r["error"] = r["error"] or f"bị huỷ: {r.get('cancel_reason')}"
     recs.sort(key=lambda r: r["start"])
-    extra = {k: [r[k] for r in recs] for k in ("sid", "turn", "resumed", "t_rel", "in_window", "dropped", "budget",
-                                                "max_tokens")}
+    keys = ("sid", "day", "turn", "resumed", "t_rel", "sched", "lag", "in_window", "dropped", "budget", "max_tokens",
+            "user_tokens", "think_s")
+    extra = {k: [r[k] for r in recs] for k in keys}
     extra.update({"mode": "scenario", "scenario": str(args.scenario), "window": {"warmup_s": warm, "measure_s": meas},
-                  "time_scale": sc})
+                  "time_scale": sc, "days": args.days, "sessions": len(sessions), "n_upper": n_upper,
+                  "slo": {"ttft_ms": args.slo_ttft_ms, "tpot_ms": args.slo_tpot_ms}, "drain_s": drain,
+                  "abort_certain_fail": bool(args.abort_certain_fail), "abort_threshold": abort_thr,
+                  "aborted": state["aborted"], "drain_cut": state["drain_cut"]})
     res = result_dict(recs, t0, extra)
     write_gz(args.out, res)
     n_in = sum(extra["in_window"])
-    print(f"scenario: {len(recs)} request ({n_in} trong cửa sổ đo), {res['failed']} lỗi")
+    print(f"scenario: {len(sessions)} phiên, {len(recs)} request ({n_in} trong cửa sổ đo), {res['failed']} lỗi"
+          + (f"; {state['aborted']['reason']}" if state["aborted"] else "")
+          + (f"; cắt {state['drain_cut']} request sau thời gian chờ" if state["drain_cut"] else ""))
+
+
+def write_json_atomic(path, obj):
+    tmp = Path(str(path) + ".tmp")
+    tmp.write_text(json.dumps(obj, ensure_ascii=False) + "\n")
+    os.replace(tmp, path)
 
 
 def main():
@@ -270,6 +392,12 @@ def main():
             p.add_argument("--measure-s", type=float, default=None)
             p.add_argument("--time-scale", type=float, default=1.0, help="chỉ để thử ở local; đo thật luôn = 1")
             p.add_argument("--max-sessions", type=int, default=0, help="chỉ để thử: lấy N phiên đầu")
+            p.add_argument("--days", default="", help="chỉ phát phiên của các ngày này (d1,d2,...)")
+            p.add_argument("--slo-ttft-ms", type=float, default=None)
+            p.add_argument("--slo-tpot-ms", type=float, default=None)
+            p.add_argument("--abort-certain-fail", action="store_true",
+                           help="dừng sớm khi p95 chắc chắn trượt SLO (cần --slo-*)")
+            p.add_argument("--progress", default="", help="file JSON tiến độ, ghi mỗi 30 s")
     args = ap.parse_args()
     asyncio.run(run_closed(args) if args.mode == "closed" else run_scenario(args))
 

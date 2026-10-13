@@ -133,21 +133,29 @@ def is_done(unit_dir, spec_hash):
 
 # ---------- kết quả từng request ----------
 
-def load_requests(unit_dir):
-    """Đọc kết quả từng request (cùng khoá với `vllm bench serve --save-detailed`), trả về list dict."""
-    unit_dir = Path(unit_dir)
-    raw = read_json(unit_dir / "bench.json.gz")
+W4_KEYS = ("sid", "day", "turn", "resumed", "t_rel", "sched", "lag", "dropped", "budget", "max_tokens", "user_tokens",
+           "think_s", "cached")
+
+def load_requests(unit_dir, raw=None):
+    """Đọc kết quả từng request (cùng khoá với `vllm bench serve --save-detailed`), trả về list dict.
+    Kết quả W4 (session_client scenario): chỉ giữ request gửi trong cửa sổ đo (`in_window`); các khoá theo phiên
+    (sid, turn, resumed, lag, cached, ...) được chép kèm vào từng request."""
+    raw = read_json(Path(unit_dir) / "bench.json.gz") if raw is None else raw
     errors = raw.get("errors") or [""] * len(raw["ttfts"])
+    extra = [k for k in W4_KEYS if k in raw]
     reqs = []
     for i in range(len(raw["ttfts"])):
+        if "in_window" in raw and not raw["in_window"][i]:
+            continue
         ok = not errors[i] and raw["ttfts"][i] is not None and raw["ttfts"][i] > 0
-        reqs.append({
+        reqs.append({**{k: raw[k][i] for k in extra},
             "start": raw["start_times"][i],
             "ttft": raw["ttfts"][i] if ok else math.inf,
             "latency": raw["latencies"][i] if ok else math.inf,
             "out": raw["output_lens"][i],
             "in": raw["input_lens"][i],
             "ok": ok,
+            "error": errors[i],
             "itl": raw["itls"][i] if ok and raw.get("itls") else [],
         })
     return reqs
@@ -201,7 +209,8 @@ def compute_metrics(reqs, n, kind="all"):
         dur = math.nan
     m = {"n_requests": len(ws), "failed": sum(not r["ok"] for r in ws), "duration_s": dur,
          "output_tok_s": sum(r["out"] for r in ok) / dur, "input_tok_s": sum(r["in"] for r in ok) / dur,
-         "req_s": len(ok) / dur, "mean_in": float(np.mean([r["in"] for r in ws])) if ws else math.nan,
+         "req_s": len(ok) / dur,
+         "mean_in": float(np.mean([r["in"] for r in ok])) if ok else math.nan,
          "mean_out": float(np.mean([r["out"] for r in ok])) if ok else math.nan}
     for name, xs in (("ttft", ttft), ("tpot", tpot), ("itl", itl), ("e2el", e2el)):
         for q in (50, 95, 99):
