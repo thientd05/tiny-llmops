@@ -41,7 +41,7 @@ Kịch bản **A**: mọi thư viện thua vLLM. Kịch bản **B**: 1 thư vi�
 | GĐ | Nội dung | A | B | Thực tế / ước lại 14/10 |
 |---|---|---|---|---|
 | 0 | Chuẩn bị máy, harness, bộ sinh workload (RAGBench có sẵn context → không cần embed) | ~3 | ~3 | **Xong: 1.2 h** (P01 0.35 + P03 0.84, + thử máy 0.07) |
-| 1 | Tune vLLM tối đa: tune config MoE (2h), ~20 sweep rút gọn dò tham số, sweep đầy đủ cho bản mặc định + bản tune, chất lượng | ~41 | ~41 | Baseline **xong: 12.0 h** (P04 4.44 + P05 4.97 + P06 2.67). Phần tune: **~31 h, chốt đo kiểu rẻ** (14/10; đo bổ sung khi cần, tối đa ~52 h nếu phải làm đủ kiểu chặt; P07 mục 6.3). Bỏ "tune config MoE" (không có dấu hiệu, P07 mục 4.6) → GĐ1 ≈ 43–64 h |
+| 1 | Tune vLLM tối đa: tune config MoE (2h), ~20 sweep rút gọn dò tham số, sweep đầy đủ cho bản mặc định + bản tune, chất lượng | ~41 | ~41 | Baseline **xong: 12.0 h** (P04 4.44 + P05 4.97 + P06 2.67). Phần tune: **~31 h, chốt đo kiểu rẻ** (14/10; đo bổ sung khi cần, tối đa ~52 h nếu phải làm đủ kiểu chặt; P07 mục 6.3). → **Lập plan P08–P14 (14/10): ~14.8 h (12.0–23.1)**, vì sàng lọc ở một mức tải thay vì tìm goodput cho từng cấu hình ([gd1-vllm-tune/README.md](gd1-vllm-tune/README.md)) → **GĐ1 ≈ 27 h**. (Ước lúc P07: bỏ "tune config MoE" vì không có dấu hiệu, P07 mục 4.6 → GĐ1 ≈ 43–64 h.) |
 | 2 | Sàng lọc: SGLang ~3h, TRT-LLM ~4h (dừng sớm nếu không chạy), LMDeploy ~3h, llama.cpp ~1.5h, LMCache ~2h; B: + full sweep thư viện sống sót + thử kết hợp | ~14 | ~31 | giữ nguyên. LMCache đã có sẵn làm backend offloading trong vLLM 0.30.0 → có thể thử ngay ở GĐ1 tune |
 | 3 | Profile cấu hình tốt nhất (nsys/ncu), danh sách nghẽn | ~8 | ~8 | giữ nguyên |
 | 4 | Custom CUDA: kernel khởi động ~6h, kernel MoE ~19h, kernel thứ hai ~13h; B: + gắn vào thư viện 2 | ~38 | ~44 | giữ nguyên. Ứng viên mới (bộ xếp lịch, giữ KV khi cắt lịch sử) chưa ước giờ |
@@ -72,6 +72,7 @@ Kịch bản **A**: mọi thư viện thua vLLM. Kịch bản **B**: 1 thư vi�
 | + 25% chạy lại | 291–325 h ≈ **2.55–2.85 triệu** | 369–403 h ≈ **3.24–3.53 triệu** |
 | Nếu giá như máy đắt nhất GĐ1 (9,900 VND/h) | 2.88–3.22 triệu | 3.65–3.99 triệu |
 | Đã tiêu (tới hết GĐ1 baseline, 14/10) | **~116.6k** (tín dụng giảm $4.451) | |
+| Sau khi lập plan tune (GĐ1 ≈ 27 h thay vì 43–64 h), + 25% chạy lại | A: ~163 h thuần → ×1.3 × 1.25 ≈ **2.32 triệu** | B: ~211 h → ≈ **3.01 triệu** |
 
 **So với ngân sách** (theo thời gian làm: 1 tháng ≤ ~2,1 triệu, 2 tháng ≤ ~3 triệu, 3 tháng ≤ ~4 triệu, thêm ~1 triệu mỗi tháng):
 

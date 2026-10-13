@@ -2,7 +2,7 @@
 
 > Lập ngày 2026-10-12. P01, P02 xong ngày 2026-10-12. P03, P04, P05, P06 xong 2026-10-13 (P06 lần 2: 2026-10-14). P07 xong 2026-10-14.
 > Mục đích: đo vLLM ở cấu hình mặc định trên L4 với đúng 3 workload của dự án, để mọi bước tune / đổi thư viện /
-> custom CUDA về sau có một mốc cố định để so. Phần "tune tối đa" của GĐ1 sẽ lập plan riêng sau khi có báo cáo P07.
+> custom CUDA về sau có một mốc cố định để so. Phần "tune tối đa" của GĐ1 sẽ lập plan riêng sau khi có báo cáo P07. → Đã lập: [../gd1-vllm-tune/README.md](../gd1-vllm-tune/README.md) (P08–P14).
 
 ## Thế nào là "vLLM mặc định"
 
