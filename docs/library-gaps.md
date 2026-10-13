@@ -63,8 +63,24 @@ Cần kiểm: `lm_head` (151936×2048, thường không lượng tử) có thể
 | SGLang | [Bỏ GPTQ thường trên NVIDIA](https://docs.sglang.ai/advanced_features/quantization.html), dùng awq/gptq_marlin; W4A8 MoE chỉ sm90 |
 | TensorRT-LLM | [Support matrix](https://nvidia.github.io/TensorRT-LLM/reference/support-matrix.html) ghi sm89 có INT4 AWQ; Qwen3 MoE AWQ tài liệu mâu thuẫn — chưa xác nhận |
 | LMDeploy | TurboMind mạnh AWQ INT4; hỗ trợ Qwen3 MoE chưa xác nhận ([supported models](https://lmdeploy.readthedocs.io/en/stable/supported_models/supported_models.html)) |
-| llama.cpp | Mạnh 1 user, yếu batching |
+| llama.cpp | Chạy được Qwen3 MoE GGUF trên CUDA, nhưng **thua vLLM rõ ràng khi nhiều user** — xem mục kiểm chứng dưới |
 | FlashInfer | Hỗ trợ SM75+, chưa thấy số đo trên L4 |
+
+## Kiểm chứng: llama.cpp có thua toàn tập khi serving nhiều user? (2026-10-12)
+
+Kết luận: **gần như chắc chắn thua trên mọi chỉ số hiệu năng mục tiêu**; chưa có số trên L4.
+
+| Chỉ số | Bằng chứng công khai | Đánh giá |
+|---|---|---|
+| Goodput / throughput | [RTX 3090 24GB, **Qwen3-Coder-30B-A3B**](https://dev.to/sikamikanikobg/vllm-vs-llamacpp-vs-ollama-what-happens-when-your-model-doesnt-fit-in-24gb-vram-56eb) (cùng kiến trúc với model chính, vLLM AWQ vs GGUF, `-np 8`): c=8 → vLLM 678 tok/s vs llama.cpp 184 (**3.7×**); c1→c8 llama.cpp chỉ ×1.2. [Red Hat, H200, Llama-3.1-8B](https://developers.redhat.com/articles/2025/09/30/vllm-or-llamacpp-choosing-right-llm-inference-engine-your-use-case): throughput llama.cpp gần như phẳng theo tải, vLLM gấp ~44× ở đỉnh | Thua |
+| TTFT p95 | Red Hat: TTFT llama.cpp tăng vọt khi tải tăng (request phải chờ slot trống) | Thua |
+| TPOT/ITL p95 | Red Hat: từ ~5 user, ITL p99 llama.cpp **thấp hơn**. Nhưng đây là do request xếp hàng ngoài slot, ít request chạy đồng thời hơn; vLLM đạt cùng điểm bằng `--max-num-seqs` nhỏ. Cái giá là TTFT, nên goodput (TTFT + TPOT) vẫn thua | Không phải ưu thế thật |
+| W2 prefix dùng chung | Prefix cache theo từng slot, không chia sẻ giữa slot ([#8860](https://github.com/ggml-org/llama.cpp/discussions/8860)); paged KV + prefix sharing mới là đề xuất, chưa merge ([#21961](https://github.com/ggml-org/llama.cpp/discussions/21961)) | Thua (system prompt bị prefill lặp) |
+| Chất lượng | Do định dạng lượng tử (GGUF Q4_K vs GPTQ/AWQ), không do thư viện. vLLM nạp GGUF qwen3moe chưa chắc ([#18382](https://github.com/vllm-project/vllm/issues/18382)) | Chưa rõ. Nếu GGUF tốt hơn → tìm định dạng tương đương cho vLLM, không đổi sang llama.cpp |
+
+Nguyên nhân kiến trúc: KV cấp cố định theo slot (`-np` quyết định lúc khởi động), không có paged attention.
+Throughput server ở batch 32 chỉ ~56% so với `llama-batched-bench` ([#18308](https://github.com/ggml-org/llama.cpp/discussions/18308)).
+MoE `mul_mat_id` trên CUDA có đồng bộ host, cản CUDA Graphs ([#12859](https://github.com/ggml-org/llama.cpp/issues/12859), issue cũ, chưa thấy xác nhận đã sửa).
 
 ## Kế hoạch xác minh (GĐ3)
 
