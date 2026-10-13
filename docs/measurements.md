@@ -5,6 +5,84 @@
 
 ---
 
+## 2026-10-14 — P07: tổng hợp baseline + phân tích thêm trên dữ liệu đã có (local, không GPU)
+
+Báo cáo: [gd1-vllm-baseline/07-tong-hop-baseline/bao-cao.md](gd1-vllm-baseline/07-tong-hop-baseline/bao-cao.md). Máy: laptop, Python 3 hệ thống + numpy.
+Nguồn: `results/gd1/04-do-baseline-day-du/20261013-p04/` (`units.csv`, `units/*/bench.json.gz`, `metrics_*.txt`),
+`results/gd1/05-w4-tai-giong-that/20261013-p05/` (`units/w4-*/bench.json.gz`, `metrics_timeseries.jsonl`, `cost.json`), các mục P01–P06 bên dưới.
+
+**Giá thuê thực theo tín dụng bị trừ** (tỉ giá 26,200):
+
+| Phiên | Machine | Giờ tính tiền | $ | $/h | VND/h |
+|---|---|---|---|---|---|
+| P01 | 116596 | 0.346 | 0.126 | 0.364 | 9,540 |
+| P03 + P04 | 116596 | 5.251 | 1.516 | 0.289 | 7,560 |
+| P05 | 150535 | 4.97 | 1.878 | 0.378 | 9,900 |
+| P06 / P06 lần 2 | 116596 | 1.78 / 0.89 | 0.592 / 0.320 | 0.333 / 0.359 | 8,710 / 9,400 |
+| **Tổng** | | **13.24** | **4.432** | **0.335** | **8,770 = giá tham chiếu** |
+
+Tín dụng $10.000 → $5.549 = $4.451 ≈ 116,600 VND (gồm thử máy $0.0038 và $0.014 bị trừ giữa P04 và P05 chưa rõ khoản).
+
+**Mốc baseline + chi phí tại giá tham chiếu** (W1–W3: trung vị 3 lần lặp [min–max]; giá 7,560 … 9,900 cho khoảng theo máy):
+
+| | Goodput | Goodput từng lần lặp / seed | Token ra/s tại goodput | VND / 1M token ra | Theo giá 7,560 … 9,900 | VND / 1M token vào+ra | VND / 1,000 request |
+|---|---|---|---|---|---|---|---|
+| W1 | 68 (72) | 68 / ≥ 72 / 68 | 615 [605–623] | **3,960** [3,910–4,030] | 3,420 … 4,470 | 1,790 | 1,340 |
+| W2 | 18 (20) | 18 / 20 / 18 | 168 [167–171] | **14,460** [14,250–14,580] | 12,470 … 16,320 | 830 | 2,480 |
+| W3 | 6 (8) | 6 / 6 / 6 | 101 [101–102] | **24,030** [23,950–24,130] | 20,720 … 27,130 | 1,200 | 7,190 |
+| W4 cả ngày | k = 18 (20) seed 1 | seed 2: 16 (18); mỗi seed 1 lần | 259 (peak) | **20,240** (seed 2: 22,770) | 17,450 … 25,710 | — | 5,550 (seed 2: 6,240) |
+
+W4: token ra cả ngày = k × 577,632 (`cost.json`); kiểm 1,738 request peak k = 18: tổng token ra = tổng `max_tokens` (client `ignore_eos`).
+P05 ghi 22,510 với giá niêm yết 9,752 VND/h; cùng throughput.
+
+**W4 — phần prompt là lịch sử dùng lại được** (lượt sau cùng phiên, lượt trước đã chạy trong lần đo, client không cắt lịch sử;
+= prompt trước + output trước − 4; mọi request đã gửi):
+
+| Lần chạy | Request | Trúng cache (server) | Dùng lại được | Trong đó câu trả lời trước | Lượt sau / bị client cắt |
+|---|---|---|---|---|---|
+| peak s1 k = 16 | 2,105 | 4.4% | 45.8% | 13.5% | 1,189 / 312 |
+| peak s1 k = 18 | 2,240 | 3.0% | 44.7% | 13.4% | 1,266 / 337 |
+| peak s2 k = 16 | 2,395 | 3.7% | 44.2% | 14.6% | 1,423 / 391 |
+| peak2 s1 k = 18 | 2,019 | 9.9% | 46.4% | 14.0% | 1,202 / 327 |
+| normal s1 k = 18 | 837 | 14.5% | 42.1% | 12.6% | 487 / 127 |
+
+Theo phút (peak s1 k = 18, cửa sổ đo): phần dùng lại được 33–72% mỗi phút, trung vị ~51%; phút 16 (85,318 token prompt, TTFT p95 38.0 s) chỉ 38%;
+phút 7 (55,651, 11.1 s) 39%.
+
+**W4 — request < 1k token: TTFT theo số request đang chờ trên server lúc gửi × có request ≥ 4k đang chờ token đầu** (`metrics_timeseries.jsonl`,
+căn thời gian theo giây đầu tiên có request chạy, sai số ~1–2 s):
+
+| Lần chạy | Hàng đợi | Không có request dài: n, p50 / p95 (s) | Có: n, p50 / p95 (s) |
+|---|---|---|---|
+| peak s1 k = 18 | 0 | 1,081, 0.21 / 0.49 | 34, 1.10 / 3.06 |
+| | 1–3 | 42, 0.33 / 4.85 | 7, 2.36 / 6.12 |
+| | 4–9 | 69, 3.70 / 15.29 | 16, 7.08 / 15.19 |
+| | ≥ 10 | 42, 9.84 / 17.47 | 31, 22.94 / 38.66 |
+| peak s1 k = 16 | 0 | 1,078, 0.19 / 0.52 | 32, 1.08 / 3.74 |
+| | ≥ 10 | 16, 10.01 / 15.40 | 21, 24.53 / 28.55 |
+| peak s2 k = 16 | 0 | 1,308, 0.19 / 0.41 | 13, 0.80 / 1.19 |
+
+**W1 — preemption:** delta `vllm:iteration_tokens_total_sum` = delta `prompt_tokens_total` − delta `prefix_cache_hits_total` + delta `generation_tokens_total`
+ở mọi đơn vị P04 (W1/68 r1: 201,063 = 111,208 − 240 + 90,095) → bộ đếm **không tính token phải tính lại sau preemption**; chi phí preemption chưa đo được.
+Thời gian prefill TB phía server: 155 ms (W1/8) → ~450 ms (W1/68).
+
+**Nhiễu giữa 3 lần lặp P04** ((max − min) / trung vị, 22 mức; trong ngoặc: 10 mức sát ngưỡng W1 64–72, W2 16–24, W3 4–8):
+TTFT TB 7.6% (17.0%), TTFT p50 11.2% (22.7%), TTFT p95 15.7% (23.4%), thời gian chờ TB phía server 17.3%, E2EL TB 5.2%, token ra/s 1.6% (2.2%), TPOT p95 3.6%.
+
+**p95 gộp 3 lần lặp (300–864 request)**, CI bootstrap 2,000 lần (coi request độc lập → lạc quan):
+W1/64 5.47 s [5.04–5.91], W1/68 8.20 [7.84–8.36], W1/72 11.20 [10.73–11.75]; W2/16 5.97 [5.13–6.37], W2/18 7.23 [6.86–9.68], W2/20 **10.87 [8.97–15.14]**,
+W2/24 16.02 [14.44–17.24]; W3/4 2.29 [1.87–2.55], W3/6 5.16 [4.51–6.39], W3/8 13.06 [12.20–13.84] → cùng goodput 68 / 18 / 6 như trung vị 3 lần.
+
+**Cặp cùng seed W2/16, P05 (machine 150535) so P04 (116596):** TTFT p95 −9.3% / +2.0% / −5.0%; token ra/s +2.3% / +2.4% / +1.8% (seed 1001 / 1002 / 1003).
+Seed 1003 có prompt TB 2,923 token, dài hơn seed 1001 (2,821) 3.6%.
+
+**Mặc định vLLM 0.30.0 trên L4** (đọc `vllm/engine/arg_utils.py` `get_batch_defaults`, tag v0.30.0; GPU < 70 GB): `max_num_batched_tokens` 2,048,
+`max_num_seqs` 256 (server OpenAI). `SchedulerConfig`: `policy` fcfs, `scheduler_reserve_full_isl` True, `watermark` 0.0, `long_prefill_token_threshold` 0.
+`CacheConfig`: `kv_offloading_size` None (backend `native` | `lmcache`).
+
+Lệnh tái lập: `.venv/bin/python bench/p07_analyze.py --price 8770 --price-lo 7560 --price-hi 9900` (in đủ mọi bảng trên; ~1 phút).
+---
+
 ## 2026-10-14 — P06 lần 2: chạy lại các bài chấm điểm của baseline → flips tự nhiên
 
 Kết quả thô: `results/gd1/06-chat-luong-baseline/20261013-p06r2/` (`self_flips.md`, `self_flips.json`, `units/<id>-r2/`; 30 MB).

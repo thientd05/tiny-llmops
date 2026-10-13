@@ -38,6 +38,10 @@
 | `max_model_len` | Độ dài tối đa (prompt + output) một request được phép |
 | `gpu_memory_utilization` | Tỉ lệ VRAM vLLM được dùng (mặc định 0.9 = 90%) |
 | Backend attention | Bộ kernel tính phần attention (FlashAttention, FlashInfer, Triton) |
+| Chặn đầu hàng (head-of-line blocking) | Request đứng đầu hàng đợi chưa được nhận (ví dụ chưa đủ KV cho cả prompt) làm mọi request phía sau cũng phải chờ, kể cả request ngắn vừa chỗ trống. vLLM 0.30.0 FCFS làm vậy (P07) |
+| `scheduler_reserve_full_isl` | Cờ vLLM (mặc định bật): chỉ nhận request mới khi **cả prompt** vừa KV còn trống, không chỉ khúc prefill đầu |
+| Watermark (vLLM) | Phần KV để dành, không dùng để nhận request mới, nhằm giảm preemption lặp lại (mặc định 0) |
+| Đẩy KV sang RAM CPU (KV offloading) | Chép KV ra RAM máy chủ khi bị đẩy khỏi GPU; request sau cùng phần đầu thì chép lại qua PCIe thay vì prefill lại. vLLM 0.30.0: `--kv-offloading-size`, backend `native` hoặc `lmcache` |
 
 ## Đo đạc
 
@@ -90,6 +94,11 @@
 | Độ phủ top-20 | Tổng xác suất của 20 token cao nhất. Gần 1 thì KL tính từ top-20 sai ít |
 | Mức tự lệch | Mức khác nhau giữa hai lần chạy của chính vLLM mặc định (cùng prompt, greedy) do batch khác nhau. Ngưỡng để phán một tối ưu "có làm sai không" |
 | Execution accuracy | % câu FinQA có đáp án số đúng (P06: đúng nếu lệch tương đối ≤ 1%) |
+| Giá tham chiếu | Đơn giá thuê cố định (8,770 VND/h = trung bình tín dụng bị trừ của 5 phiên GĐ1) dùng cho mọi phép tính VND / 1M token, để chênh chi phí giữa hai cấu hình chỉ do chênh throughput, không do giá máy |
+| Cổng chất lượng | Bộ đo chất lượng bắt buộc cho cấu hình đổi số học (ví dụ KV FP8): teacher forcing + sinh tham chiếu + FinQA + MMLU-Pro, so với khoảng giữa hai lần chạy baseline (P06) |
+| So cặp cùng seed | So hai cấu hình trên cùng tập request (cùng seed), lấy hiệu từng cặp. Loại được phần lệch do tập request khác nhau |
+| Lệch do chọn người thắng | Chọn cấu hình tốt nhất trong nhiều cấu hình đo có nhiễu thì số của nó bị đẩy lên một phần do may; phải đo lại trên dữ liệu mới (Cawley & Talbot 2010) |
+| Bootstrap | Ước khoảng tin cậy bằng cách lấy mẫu lại có hoàn lại từ dữ liệu đã đo. Sai (hẹp quá) nếu các mẫu không độc lập, ví dụ request chậm theo cụm |
 
 ## Công cụ & phần mềm
 

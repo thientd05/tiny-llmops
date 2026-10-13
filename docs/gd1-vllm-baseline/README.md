@@ -1,6 +1,6 @@
 # GĐ1 (phần đầu) — vLLM mặc định làm mốc so sánh (baseline)
 
-> Lập ngày 2026-10-12. P01, P02 xong ngày 2026-10-12. P03, P04, P05, P06 xong 2026-10-13.
+> Lập ngày 2026-10-12. P01, P02 xong ngày 2026-10-12. P03, P04, P05, P06 xong 2026-10-13 (P06 lần 2: 2026-10-14). P07 xong 2026-10-14.
 > Mục đích: đo vLLM ở cấu hình mặc định trên L4 với đúng 3 workload của dự án, để mọi bước tune / đổi thư viện /
 > custom CUDA về sau có một mốc cố định để so. Phần "tune tối đa" của GĐ1 sẽ lập plan riêng sau khi có báo cáo P07.
 
@@ -25,8 +25,8 @@
 | P04 | [Đo baseline đầy đủ W1/W2/W3](04-do-baseline-day-du/plan.md) (lưới thích nghi + tìm nhị phân goodput) | Có | ~6.5 h → ước lại từ P03 ~5.1 h (thực tế 4.44 h, ≈ 32.7k VND) | **Xong** 2026-10-13 | [đọc ngay](04-do-baseline-day-du/doc-ngay.md) · [đầy đủ](04-do-baseline-day-du/bao-cao.md) |
 | P05 | [W4: tải giống thật (phiên người dùng BurstGPT)](05-w4-tai-giong-that/plan.md) | Có | ~6.5 h → ước lại ~4.4–5.4 h (thực tế 4.97 h, ≈ 49.2k VND) | **Xong** 2026-10-13 | [đọc ngay](05-w4-tai-giong-that/doc-ngay.md) · [đầy đủ](05-w4-tai-giong-that/bao-cao.md) |
 | P06 | [Chất lượng baseline + output tham chiếu](06-chat-luong-baseline/plan.md) | Có | ~1.5 h → ước lại ~2.2–2.6 h (thực tế 1.78 h ≈ 15.5k VND + lần 2 0.88 h ≈ 8.4k VND) | **Xong** 2026-10-14 | [đọc ngay](06-chat-luong-baseline/doc-ngay.md) · [đầy đủ](06-chat-luong-baseline/bao-cao.md) |
-| P07 | [Tổng hợp baseline, cập nhật kế hoạch](07-tong-hop-baseline/plan.md) | Không | 0 | Chưa làm | — |
-| | **Tổng** | | **~16.25 h ≈ 166k VND** | | |
+| P07 | [Tổng hợp baseline, cập nhật kế hoạch](07-tong-hop-baseline/plan.md) | Không | 0 | **Xong** 2026-10-14 (đã chốt cách đo phần tune, mục 6.3) | [đọc ngay](07-tong-hop-baseline/doc-ngay.md) · [đầy đủ](07-tong-hop-baseline/bao-cao.md) |
+| | **Tổng** | | **~16.25 h ≈ 166k VND** (thực tế 13.24 h ≈ 116k VND, P07 mục 3.4) | | |
 
 Thứ tự phụ thuộc: P01 → P02 (P02 làm song song được với P01) → P03 → P04 → P05, P06 → P07.
 

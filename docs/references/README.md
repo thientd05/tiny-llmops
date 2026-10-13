@@ -300,3 +300,102 @@ Thêm tài liệu mới: thêm một mục vào đúng nhóm, lưu bản sao và
   `files/gpt3-financial-reasoners2023.pdf`. Báo execution accuracy trên FinQA theo dung sai "between 1% to 200% at 1% increments".
 - Tra: 2026-10-13. **Dùng cho:** P06 chấm FinQA-RAG đúng nếu lệch tương đối ≤ 1% (chính), báo thêm 0.1% và 5%; chấp nhận dạng phần trăm
   vì đáp án gốc FinQA ghi phần trăm dạng phân số (0.14464).
+
+---
+
+## F. Tune vLLM trên L4: cơ chế bộ xếp lịch, KV cache, ngân sách token, hội thoại nhiều lượt (cho P07 và plan tune GĐ1)
+
+> Tra 2026-10-14 khi làm P07. Dùng cho danh sách nghi vấn tune: [P07 bao-cao.md](../gd1-vllm-baseline/07-tong-hop-baseline/bao-cao.md) mục 4.
+> Tài liệu và mã vLLM lấy đúng tag **`v0.30.0`** (phiên bản đã ghim) từ `raw.githubusercontent.com/vllm-project/vllm/v0.30.0/...`
+> (docs.vllm.ai trả lỗi 429 hôm đó; bản "latest" có thể khác bản đang dùng).
+
+### F1. vLLM 0.30.0 docs — *Optimization and Tuning* (`docs/configuration/optimization.md`) + *Automatic Prefix Caching* design (`docs/design/prefix_caching.md`). ✅
+
+- Bản lưu: `files/vllm-0.30.0-docs-optimization.md`, `files/vllm-0.30.0-docs-design-prefix-caching.md` · Tra: 2026-10-14
+- **Preemption:** "preemption and recomputation can adversely affect end-to-end latency". Gợi ý: tăng `gpu_memory_utilization`;
+  giảm `max_num_seqs` hoặc `max_num_batched_tokens`. V1 mặc định RECOMPUTE.
+- **Chunked prefill:** lập lịch ưu tiên decode, phần ngân sách còn lại cho prefill. "Smaller values (e.g., 2048) achieve better ITL because
+  there are fewer prefills slowing down decodes. Higher values achieve better time to first token (TTFT)"; "For optimal throughput, we recommend
+  setting `max_num_batched_tokens > 8192`".
+- **`--kv-cache-memory`:** đặt cố định dung lượng KV, bỏ bước đo bộ nhớ lúc khởi động; "a conservative value caps batch concurrency".
+  (Trong mã v0.30.0 tên cờ là `--kv-cache-memory-bytes`, xem F3.)
+- **Prefix caching:** khối KV của request đã xong vào cuối hàng "free queue"; cần chỗ thì lấy khối đầu hàng, tức **ít dùng gần nhất (LRU)**,
+  và khối đó mất khả năng dùng lại.
+- **Dùng cho:** P07 N1 (KV), N3 (ngân sách token), N4 (preemption), N2 (vì sao lịch sử bị đẩy ra).
+
+### F2. vLLM 0.30.0 docs — *Quantized KV Cache* (`docs/features/quantization/quantized_kvcache.md`). ✅
+
+- Bản lưu: `files/vllm-0.30.0-docs-quantized-kvcache.md` · Tra: 2026-10-14
+- KV FP8 giảm bộ nhớ KV, "store more tokens in memory". `kv_cache_dtype="fp8"` không hiệu chuẩn thì mọi scale = 1.0;
+  "[Recommended] Calibration with a dataset (via llm-compressor)". Per-head scale chỉ có ở backend Flash Attention.
+- **Dùng cho:** P07 N1. Hạn chế đã biết trên Ada: FA2 không hỗ trợ KV FP8 → backend khác ([library-gaps.md](../library-gaps.md) #3).
+
+### F3. vLLM 0.30.0 — mã nguồn bộ xếp lịch và cấu hình. ✅
+
+- Bản lưu: `files/vllm-0.30.0-v1-scheduler.py` (`vllm/v1/core/sched/scheduler.py`), `files/vllm-0.30.0-config-scheduler.py`,
+  `files/vllm-0.30.0-config-cache.py`, `files/vllm-0.30.0-engine-arg-utils.py` · Tra: 2026-10-14 · License Apache-2.0
+- **Mặc định cho GPU < 70 GB** (`EngineArgs.get_batch_defaults`, server OpenAI): `max_num_batched_tokens` **2048**, `max_num_seqs` **256**.
+- **Nhận request chờ** (`Scheduler.schedule`, phần "Next, schedule the WAITING requests"): duyệt hàng đợi theo `policy` (mặc định `"fcfs"`);
+  `allocate_slots(..., full_sequence_must_fit=self.scheduler_reserve_full_isl)`; nếu `new_blocks is None` → `break`
+  (request phía sau không được xét trong bước đó).
+- `scheduler_reserve_full_isl: bool = True`: "checks whether the full input sequence length fits in the KV cache before admitting a new request,
+  rather than only checking the first chunk. Prevents over-admission and KV cache thrashing with chunked prefill."
+- `watermark: float = 0.0`: "Fraction of total KV cache blocks to keep free ... when admitting waiting or preempted requests ... helps avoid
+  frequent KV cache eviction and the resulting repeated preemption".
+- `long_prefill_token_threshold` (0 = tắt), `policy` `"fcfs"` | `"priority"` ("lower value means earlier handling"), `scheduler_cls` (lớp xếp lịch tuỳ biến),
+  `max_num_queued_tokens` (từ chối request bằng HTTP 503 khi tồn prefill vượt mức).
+- Preemption khi request đang chạy thiếu KV: FCFS chọn `self.running[-1]` (request vào sau cùng); priority chọn request ưu tiên thấp nhất.
+- `kv_offloading_size` (GiB, mặc định None = tắt), `kv_offloading_backend` `"native"` | `"lmcache"`: "enable KV cache offloading to CPU".
+- Tên cờ CLI: `--scheduling-policy`, `--long-prefill-token-threshold`, `--scheduler-reserve-full-isl`, `--watermark`, `--scheduler-cls`,
+  `--kv-offloading-size`, `--kv-offloading-backend`, `--kv-cache-memory-bytes`, `--kv-cache-dtype`.
+- **Dùng cho:** P07 N3 (cơ chế chặn đầu hàng), N1, N2, N4; ứng viên GĐ4 bộ xếp lịch cắm qua `scheduler_cls`.
+
+### F4. Agrawal et al. (2024). *Taming Throughput-Latency Tradeoff in LLM Inference with Sarathi-Serve.* OSDI '24, arXiv 2403.02310. ✅
+
+- Link: <https://arxiv.org/abs/2403.02310> · Bản lưu: `files/sarathi-serve2024-osdi.pdf` · Tra: 2026-10-14
+- Chunked prefill + "stall-free batching": giới hạn số token mỗi bước (token budget) để prefill không làm khựng decode.
+- Mục 4.3: chọn token budget là đánh đổi giữa chi phí prefill và độ trễ decode; "setting the token budget to maximum number of tokens that can be packed
+  in a batch without violating TBT SLO". Budget quá nhỏ: "lower arithmetic intensity and other fixed overheads". Kích thước khúc không chia hết tile
+  có thể làm prefill chậm hơn 32% (257 so với 256).
+- **Dùng cho:** P07 N3: TPOT đang dư (82–104 ms so với SLO 150) → có chỗ tăng `max_num_batched_tokens`.
+
+### F5. Gao et al. (2024). *Cost-Efficient Large Language Model Serving for Multi-turn Conversations with CachedAttention.* USENIX ATC '24, arXiv 2403.19708. ✅ (phần tóm tắt)
+
+- Link: <https://arxiv.org/abs/2403.19708> · Bản lưu: `files/cachedattention2024-atc.pdf` · Tra: 2026-10-14
+- Hội thoại nhiều lượt phải tính lại KV của lịch sử; giữ KV ở tầng bộ nhớ rẻ hơn (RAM, đĩa), nạp trước theo lớp, xếp chỗ theo gợi ý của bộ xếp lịch;
+  tách mã hoá vị trí để KV còn dùng được khi cắt bớt ngữ cảnh. Kết quả (tóm tắt): "decreases the time to the first token (TTFT) by up to 87%,
+  improves the prompt prefilling throughput by up to 7.8× for multi-turn conversations, and reduces the end-to-end inference cost by up to 70%".
+- Chỉ mới đối chiếu phần tóm tắt và giới thiệu; chưa đọc phần thí nghiệm.
+- **Dùng cho:** P07 N2 (giữ lịch sử ở RAM CPU); ứng viên GĐ4 "giữ KV khi client cắt lịch sử".
+
+### F6. Qwen — model card `Qwen/Qwen3-30B-A3B` (mục Best Practices). ✅
+
+- Link: <https://huggingface.co/Qwen/Qwen3-30B-A3B> · Bản lưu: `files/qwen3-30b-a3b-model-card.md` · Tra: 2026-10-14
+- "**No Thinking Content in History**: In multi-turn conversations, the historical model output should only include the final output part and does not
+  need to include the thinking content. It is implemented in the provided chat template in Jinja2."
+- **Dùng cho:** P07 N5: giữ khối `<think></think>` rỗng trong lịch sử là lệch khỏi cách dùng Qwen khuyến nghị → cần cổng chất lượng trước khi dùng.
+
+---
+
+## G. Phương pháp so sánh hiệu năng (cho mọi phép so ở GĐ1 tune → GĐ5)
+
+### G1. Hoefler, T. & Belli, R. (2015). *Scientific Benchmarking of Parallel Computing Systems: Twelve ways to tell the masses when reporting performance results.* SC '15. ✅
+
+- Link: <https://htor.inf.ethz.ch/publications/img/hoefler-scientific-benchmarking.pdf> · Bản lưu: `files/hoefler2015-sc-scientific-benchmarking.pdf` · Tra: 2026-10-14
+- Quy tắc dùng:
+  - Rule 5: "For nondeterministic data, report confidence intervals of the measurement."
+  - Rule 6: "Do not assume normality of collected data (e.g., based on the number of samples) without diagnostic checking."
+  - Rule 7: "Compare nondeterministic data in a statistically sound way, e.g., using non-overlapping confidence intervals or ANOVA."
+  - Rule 8: cân nhắc trung bình / trung vị có phù hợp không; "worst-case latency, may require other percentiles".
+  - Rule 9: "Document all varying factors and their levels as well as the complete experimental setup".
+- **Dùng cho:** P07 dùng một giá tham chiếu cố định (Rule 9); báo khoảng min–max giữa các lần lặp thay vì CI theo request (Rule 6);
+  quy tắc "khoảng goodput không chồng nhau" sẵn có của dự án khớp Rule 7.
+
+### G2. Cawley, G. C. & Talbot, N. L. C. (2010). *On Over-fitting in Model Selection and Subsequent Selection Bias in Performance Evaluation.* JMLR 11, 2079–2107. ✅ (phần tóm tắt)
+
+- Link: <https://jmlr.org/papers/volume11/cawley10a/cawley10a.pdf> · Bản lưu: `files/cawley2010-jmlr-selection-bias.pdf` · Tra: 2026-10-14
+- Tối ưu theo một tiêu chí đo có phương sai thì cách chọn bị "over-fitting", và số đo của phương án được chọn bị lệch lạc quan; "the effects of this form of
+  over-fitting are often of comparable magnitude to differences in performance between learning algorithms". Kết luận áp dụng cho
+  "any model selection practice involving the optimisation of a model selection criterion evaluated over a finite sample of data".
+- Bài viết cho học máy; dự án dùng nguyên lý chung: chọn cấu hình tune tốt nhất từ nhiều lần đo có nhiễu thì phải đo lại cấu hình thắng trên dữ liệu mới.
+- **Dùng cho:** P07 mục 6.1 R3.
