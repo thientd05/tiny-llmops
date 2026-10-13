@@ -1,0 +1,99 @@
+{
+  "finqa@0.001": {
+    "ci95": [
+      -0.008838735408747734,
+      0.01581345206088374
+    ],
+    "diff": 0.0034873583260680036,
+    "flips_correct_to_wrong": 24,
+    "flips_pct": 0.045335658238884045,
+    "flips_wrong_to_correct": 28,
+    "n": 1147,
+    "se_paired": 0.006288823334089662
+  },
+  "finqa@0.01": {
+    "ci95": [
+      -0.003599012765198405,
+      0.02103580439553842
+    ],
+    "diff": 0.008718395815170008,
+    "flips_correct_to_wrong": 21,
+    "flips_pct": 0.045335658238884045,
+    "flips_wrong_to_correct": 31,
+    "n": 1147,
+    "se_paired": 0.006284392132841027
+  },
+  "finqa@0.05": {
+    "ci95": [
+      -0.0031149594177372793,
+      0.020551751048077296
+    ],
+    "diff": 0.008718395815170008,
+    "flips_correct_to_wrong": 19,
+    "flips_pct": 0.041848299912816043,
+    "flips_wrong_to_correct": 29,
+    "n": 1147,
+    "se_paired": 0.006037426139238412
+  },
+  "finqa_pred_changed": 0.15082824760244115,
+  "gsm8k:exact_match,flexible-extract": {
+    "ci95": [
+      -0.006053899088692699,
+      0.007570199316137732
+    ],
+    "diff": 0.000758150113722517,
+    "flips_correct_to_wrong": 10,
+    "flips_pct": 0.01592115238817286,
+    "flips_wrong_to_correct": 11,
+    "n": 1319,
+    "se_paired": 0.0034755353073547017
+  },
+  "gsm8k:exact_match,strict-match": {
+    "ci95": [
+      -0.004248077277010574,
+      0.01031327818679071
+    ],
+    "diff": 0.003032600454890068,
+    "flips_correct_to_wrong": 10,
+    "flips_pct": 0.01819560272934041,
+    "flips_wrong_to_correct": 14,
+    "n": 1319,
+    "se_paired": 0.0037146314958676745
+  },
+  "ifeval:prompt_level_loose_acc,none": {
+    "ci95": [
+      -0.019188435850199366,
+      0.019188435850199366
+    ],
+    "diff": 0.0,
+    "flips_correct_to_wrong": 14,
+    "flips_pct": 0.051756007393715345,
+    "flips_wrong_to_correct": 14,
+    "n": 541,
+    "se_paired": 0.009790018290918044
+  },
+  "ifeval:prompt_level_strict_acc,none": {
+    "ci95": [
+      -0.030256194148332596,
+      0.008075048122454591
+    ],
+    "diff": -0.011090573012939002,
+    "flips_correct_to_wrong": 17,
+    "flips_pct": 0.051756007393715345,
+    "flips_wrong_to_correct": 11,
+    "n": 541,
+    "se_paired": 0.009778378130302854
+  },
+  "mmlu_pro:exact_match,custom-extract": {
+    "ci95": [
+      -0.03190015614279827,
+      -9.984385720173197e-05
+    ],
+    "diff": -0.016,
+    "flips_correct_to_wrong": 41,
+    "flips_pct": 0.066,
+    "flips_wrong_to_correct": 25,
+    "n": 1000,
+    "se_paired": 0.008112324562652177
+  }
+}

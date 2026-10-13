@@ -104,8 +104,11 @@ Prompt RAG = system prompt chung + context của RAGBench + câu hỏi → khôn
 | Cấp | Cách đo |
 |---|---|
 | Kernel | Unit test vs PyTorch reference (max abs/rel error) |
-| Model | ~1k prompt greedy: tỉ lệ token trùng, KL divergence logits vs vLLM gốc |
-| Tác vụ | MMLU-Pro, độ chính xác RAG (RAGBench test split), GSM8K |
+| Model | 1,000 prompt greedy (W1/W2/W3-like): % output giống hệt, vị trí bắt đầu lệch, Δp và KL xấp xỉ (top-20) trên đoạn chung; teacher forcing trên 200 prompt ngắn: same top-1. So với **mức tự lệch** của chính vLLM (cùng / khác mức tải) |
+| Tác vụ | MMLU-Pro (tập con ngẫu nhiên 1,000 câu), IFEval (541), GSM8K (1,319), **FinQA-RAG** (1,147 câu RAGBench finqa test + đáp án gốc FinQA, dung sai 1%). Mọi điểm kèm CI 95%; so hai cấu hình bằng paired SE + flips |
+
+Chốt 2026-10-13 (P06 bước 1), lý do + bằng chứng: [P06 plan](gd1-vllm-baseline/06-chat-luong-baseline/plan.md) mục "Quyết định đã chốt",
+[references](references/README.md) nhóm E. Code: `quality/`.
 
 ⚠️ Kiểm tra license từng dataset (WildChat, LMSYS, RAGBench và các dataset thành phần) — chỉ dùng cho nghiên cứu.
 

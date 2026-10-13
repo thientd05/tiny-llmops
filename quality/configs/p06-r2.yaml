@@ -1,0 +1,35 @@
+# P06 lần 2 — chạy lại các bài chấm điểm của baseline (vLLM 0.30.0 mặc định + --max-model-len 16384) trên L4.
+# Chạy trên máy thuê:  bash quality/remote_quality.sh quality/configs/p06.yaml /root/results/p06
+# Quyết định + bằng chứng: docs/gd1-vllm-baseline/06-chat-luong-baseline/plan.md, docs/references nhóm E.
+sets:
+  reference: data/quality/reference.jsonl      # 1,000 prompt (500 W1-like, 400 W2-like, 100 W3-like), 200 cờ tf
+  finqa_rag: data/quality/finqa_rag.jsonl      # 1,147 câu FinQA test dựng như W2, đáp án gốc exe_ans
+units:
+  # P06 lần 2 (2026-10-13, sau báo cáo P06): chạy lại các bài chấm điểm y nguyên cấu hình để đo flips tự nhiên của baseline
+  # (baseline với chính nó). Đơn vị mới (-r2) có thư mục riêng → không dùng lại cache lm-eval của lần 1.
+  - {id: finqa-c32-r2, kind: gen, set: finqa_rag, concurrency: 32, max_tokens: 768, logprobs: 0}
+  - {id: lm-gsm8k-r2,    kind: lmeval, tasks: gsm8k,    concurrency: 32}
+  - {id: lm-ifeval-r2,   kind: lmeval, tasks: ifeval,   concurrency: 32}
+  - {id: lm-mmlu-pro-r2, kind: lmeval, tasks: mmlu_pro, concurrency: 32, samples: data/quality/mmlu_pro_samples.json}
+lmeval:
+  python: /root/lmeval-venv/bin/python
+  version: lm-eval==0.4.13
+  max_length: 16384
+  max_gen_toks: 1024   # task không tự đặt (gsm8k) dùng giá trị này; mmlu_pro 2048, ifeval 1280 theo yaml của task
+  seed: 1234
+server:
+  start: "bash scripts/serve_default.sh {log} --max-model-len 16384"
+  stop: "bash scripts/stop_server.sh"
+  base_url: http://localhost:8000
+  model: Qwen/Qwen3-30B-A3B-GPTQ-Int4
+  recompile_restart_s: 10
+  restart: never
+client:
+  tokenizer: /root/models/Qwen3-30B-A3B-GPTQ-Int4
+software:
+  vllm: 0.30.0
+  torch: 2.13.0+cu130
+  model: Qwen/Qwen3-30B-A3B-GPTQ-Int4@9b534e4318b7ebc3c961a839f13eb18b1833f441
+  image: nvidia/cuda:13.0.2-devel-ubuntu22.04
+  env: VLLM_SERVER_DEV_MODE=1
+warmup: {requests: 4, max_tokens: 16, path: data/workloads/w2.jsonl}

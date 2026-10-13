@@ -11,3 +11,8 @@ docs/references/files/
 
 # Dữ liệu tải về / sinh ra (build lại bằng workloads/build.py, kiểm bằng manifest.json)
 data/
+
+# P06 trở đi: kết quả thô nặng chỉ giữ ở local (sha256 trong results/gd1/06-chat-luong-baseline/HEAVY_FILES_SHA256.txt)
+results/gd1/06-chat-luong-baseline/*/units/*/chunks/
+results/gd1/06-chat-luong-baseline/*/units/*/cache*
+results/gd1/06-chat-luong-baseline/*/units/*/out/**/samples_*.jsonl

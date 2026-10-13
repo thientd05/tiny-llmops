@@ -176,3 +176,127 @@ Thêm tài liệu mới: thêm một mục vào đúng nhóm, lưu bản sao và
 - Kết luận: **chưa công cụ nào** có đủ phiên + think time theo phân bố thật + người dùng đến theo trace + nội dung RAG doanh nghiệp.
 - Tra: 2026-10-12. Links: <https://github.com/vllm-project/vllm/tree/main/benchmarks/multi_turn> ·
   <https://docs.nvidia.com/aiperf/tutorials/datasets-inputs/multi-turn-conversations> · <https://github.com/vllm-project/guidellm/issues/1082>
+
+---
+
+## E. Đo chất lượng: tác vụ, thống kê, độ gần với baseline, tính tái lập (cho P06 và mọi bước tối ưu sau)
+
+> Tra 2026-10-13 khi chuẩn bị P06. Quyết định dựa trên nhóm này: [P06 plan.md](../gd1-vllm-baseline/06-chat-luong-baseline/plan.md) mục "Quyết định đã chốt".
+
+### E1. Qwen Team (2025). *Qwen3 Technical Report.* arXiv 2505.09388. ✅
+
+- Link: <https://arxiv.org/abs/2505.09388> · Bản lưu: `files/qwen3-2025-technical-report.pdf` · Tra: 2026-10-13
+- **Bảng 16 (post-trained, non-thinking), cột Qwen3-30B-A3B:** MMLU-Redux 84.1 · GPQA-Diamond 54.8 · IFEval strict prompt 83.7 ·
+  MATH-500 89.8 · AIME'24 32.8 · Arena-Hard 88.0 · BFCL v3 58.6 · LiveCodeBench v5 29.8.
+- **Bảng 5 (bản Base, không phải bản chat):** Qwen3-30B-A3B-Base MMLU-Pro 61.49 · GSM8K 91.81 · MMLU 81.38.
+  → Báo cáo **không có** MMLU-Pro / GSM8K cho bản post-trained.
+- **Cách đánh giá (mục 4.6):** non-thinking dùng **lấy mẫu** temperature 0.7, top-p 0.8, top-k 20, presence penalty 1.5;
+  max output 32,768 token. Thinking: temperature 0.6, top-p 0.95.
+- **Dùng cho:** chọn tác vụ có số công bố để so INT4 với bản gốc (IFEval); biết điểm công bố đo bằng lấy mẫu, không phải greedy
+  → chênh lệch với số mình đo một phần do cách sinh.
+
+### E2. Qwen — model card `Qwen/Qwen3-30B-A3B-Instruct-2507` (bảng so sánh). ✅
+
+- Link: <https://huggingface.co/Qwen/Qwen3-30B-A3B-Instruct-2507> · Bản lưu: `files/qwen3-30b-a3b-instruct-2507-model-card.md` · Tra: 2026-10-13
+- Bảng benchmark có cột **"Qwen3-30B-A3B Non-Thinking"** (đúng bản dự án dùng, ở chế độ tắt thinking):
+  **MMLU-Pro 69.1** · MMLU-Redux 84.1 · GPQA 54.8 · SuperGPQA 42.2 · IFEval 83.7 · MMLU-ProX 65.1.
+- **Dùng cho:** mốc so sánh MMLU-Pro của bản INT4 (P06 câu hỏi 1).
+
+### E3. Miller, E. (2024). *Adding Error Bars to Evals: A Statistical Approach to Language Model Evaluations.* arXiv 2411.00640 (Anthropic). ✅
+
+- Link: <https://arxiv.org/abs/2411.00640> · Bản lưu: `files/miller2024-error-bars-evals.pdf` · Tra: 2026-10-13
+- **Khuyến nghị (mục 1):** (1) sai số chuẩn theo định lý giới hạn trung tâm; (2) sai số chuẩn theo cụm khi câu hỏi theo nhóm;
+  (3) giảm phương sai bằng lấy mẫu lại / dùng xác suất token kế tiếp; (4) **so hai model bằng hiệu theo từng câu (paired)**;
+  (5) dùng power analysis để biết một eval (hoặc **một tập con ngẫu nhiên**) có đủ để kiểm giả thuyết không.
+- **CI 95% = s̄ ± 1.96 × SE** (công thức 3). Paired: Var(A−B) = Var(A) + Var(B) − 2 Cov(A, B) → hai model trả lời giống nhau
+  nhiều thì sai số của hiệu rất nhỏ (mục 4.2).
+- **Cỡ mẫu (công thức 9, ví dụ mục 5):** phát hiện chênh δ = 0.03 với α = 0.05, power 80%: n ≈ **969** câu →
+  "new evals should contain at least 1,000 questions".
+- **Dùng cho:** MMLU-Pro lấy **tập con ngẫu nhiên 1,000 câu** (không chạy đủ 12,032); báo mọi điểm kèm CI 95%; so bản tối ưu với
+  baseline bằng paired SE.
+
+### E4. Dutta et al. (2024). *Accuracy is Not All You Need.* NeurIPS 2024, arXiv 2407.09141 (Microsoft Research). ✅
+
+- Link: <https://arxiv.org/abs/2407.09141> · Bản lưu: `files/dutta2024-accuracy-not-all-you-need.pdf` · Tra: 2026-10-13
+- Các phương pháp lượng tử hoá có độ chính xác chênh **0–2%** so với 16-bit nhưng **flips** (câu đổi đúng↔sai) tới **13.6%**;
+  chỉ GPTQ W8A16 có flips không đáng kể (mục 1). MMLU: 8–16% flips với BnB W4A4 (mục 4).
+- **Định nghĩa:** flips = % câu đổi đúng→sai hoặc sai→đúng; KL = trung bình KL(P_baseline || P_nén) trên mọi token của đáp án,
+  tính trên **toàn bộ từ vựng** (công thức 1). KL và flips tương quan Spearman **0.981** trên MMLU.
+- **Kết luận tác giả:** "distance metrics such as flips and KL-divergence are essential for evaluating all optimization methods
+  which may change the model outputs".
+- **Dùng cho:** mọi bước tối ưu (KV FP8, thư viện khác, kernel GĐ4) phải báo **flips + độ gần (KL/Δp/same-top-1)**, không chỉ độ chính xác.
+
+### E5. llama.cpp — `tools/perplexity/README.md` (mục KL divergence). ✅
+
+- Link: <https://github.com/ggml-org/llama.cpp/blob/master/tools/perplexity/README.md> (commit README gần nhất `92f7da00b4`, 2026-03-05) ·
+  Bản lưu: `files/llamacpp-perplexity-kld-readme.md` · Tra: 2026-10-13
+- Cách so bản lượng tử với FP16 trên **cùng văn bản** (teacher forcing): KLD, Mean Δp ("change in 'correct' token probability"),
+  RMS Δp, percentiles của Δp, **Same top p** ("Percentage of how often the token was assigned the highest probabilities by both models").
+- "If the percentiles are symmetric then the quantization is essentially just adding noise. If the negative values are significantly
+  larger than the positive values then this indicates that the model is actually becoming worse".
+- File logits đầy đủ rất lớn: **11 GiB (LLaMA 2) / 37 GiB (LLaMA 3)** cho Wikitext-2.
+- **Dùng cho:** bộ chỉ số độ gần của P06 (same-top-1, Δp và tính đối xứng, KL); lý do không lưu đủ logits.
+
+### E6. Anshumann et al. (2025). *Sparse Logit Sampling: Accelerating Knowledge Distillation in LLMs.* arXiv 2503.16870. ⚠️
+
+- Link: <https://arxiv.org/abs/2503.16870> · Tra: 2026-10-13 (chỉ đọc tóm tắt qua tìm kiếm, chưa lưu bản gốc)
+- Cảnh báo: chỉ giữ top-K xác suất của teacher làm ước lượng bị lệch (không thấy phần đuôi).
+- **Dùng cho:** ghi rõ KL tính từ top-20 là **xấp xỉ**; P06 đo kèm "độ phủ" (tổng xác suất của top-20) để biết sai số; chỉ số chính
+  dùng same-top-1 và Δp (tính chính xác, không cần đủ logits).
+
+### E7. He, H. & Thinking Machines Lab (2025). *Defeating Nondeterminism in LLM Inference.* Thinking Machines blog, 10/9/2025. ✅
+
+- Link: <https://thinkingmachines.ai/blog/defeating-nondeterminism-in-llm-inference/> · Bản lưu: `files/he2025-thinkingmachines-defeating-nondeterminism.html` · Tra: 2026-10-13
+- Nguyên nhân output khác nhau ở temperature 0: forward pass **không bất biến theo kích thước batch** ("our request's output does depend
+  on the parallel user requests... because our forward pass lacks 'batch invariance'").
+- Thí nghiệm: Qwen3-235B-A22B-Instruct-2507, 1,000 lần sinh ở temperature 0 → **80 kết quả khác nhau**, giống nhau 102 token đầu,
+  lệch từ token 103. Bật kernel bất biến theo batch → 1,000/1,000 giống nhau.
+- **Dùng cho:** P06 đo "mức tự lệch" của vLLM mặc định ở các mức tải khác nhau làm ngưỡng; không coi mọi lệch token là lỗi.
+
+### E8. vLLM docs — *Reproducibility* (latest, cập nhật 7/10/2026). ✅
+
+- Link: <https://docs.vllm.ai/en/latest/usage/reproducibility.html> · Bản lưu: `files/vllm-docs-reproducibility.html` · Tra: 2026-10-13
+- "vLLM does not guarantee the reproducibility of the results by default, for the sake of performance." Online mode chỉ tái lập được khi
+  bật batch invariance (`VLLM_BATCH_INVARIANT=1`, beta). "Even with the above settings, vLLM only provides reproducibility when it runs
+  on the same hardware and the same vLLM version."
+- **Dùng cho:** baseline đo ở chế độ mặc định (không bật batch invariance vì làm chậm); so sánh chất lượng phải cùng máy, cùng phiên bản.
+
+### E9. Chen et al. (2021). *FinQA: A Dataset of Numerical Reasoning over Financial Data.* EMNLP 2021, arXiv 2109.00122. ✅
+
+- Link: <https://arxiv.org/abs/2109.00122> · Bản lưu: `files/finqa2021-emnlp.pdf` · Dữ liệu: <https://github.com/czyssrs/FinQA> (`dataset/test.json`,
+  lưu ở `data/raw/finqa/test.json`) · Tra: 2026-10-13
+- 8,281 câu hỏi số liệu trên báo cáo tài chính (bảng + văn bản); chia train/dev/test, **test 1,147**. Chỉ số: **execution accuracy**
+  (kết quả số đúng). Chuyên gia tài chính đạt 91.16%, người không chuyên 50.68%.
+- Kiểm 2026-10-13: RAGBench `finqa` test có 1,147 id / 1,138 câu hỏi khác nhau, **khớp 1,138/1,138** câu hỏi của FinQA test
+  → lấy được đáp án gốc (`qa.exe_ans`).
+- **Dùng cho:** độ chính xác RAG của P06 (tài liệu tài chính doanh nghiệp, chấm tự động bằng đáp án số).
+
+### E10. Friel et al. (2024). *RAGBench: Explainable Benchmark for Retrieval-Augmented Generation Systems.* arXiv 2407.11005. ✅
+
+- Link: <https://arxiv.org/abs/2407.11005> · Bản lưu: `files/ragbench2024.pdf` · Tra: 2026-10-13
+- 12 dataset thành phần, giữ split gốc; với FinQA "We retain the original splits and generate 2 LLM responses per each context-query
+  example"; TAT-QA "generate new responses with LLMs". Cột `response` là **câu trả lời do LLM sinh** (gpt-3.5-turbo-0125...) kèm nhãn
+  bám tài liệu, **không phải đáp án đúng**.
+- **Dùng cho:** không chấm RAG bằng `response` của RAGBench; lấy đáp án từ dataset gốc (E9).
+
+### E11. Bộ tác vụ chuẩn trong lm-evaluation-harness 0.4.13 (ghim). ✅
+
+- MMLU-Pro — Wang et al. (2024), NeurIPS 2024 D&B, arXiv 2406.01574 (`files/mmlupro2024-neurips.pdf`): **12,032 câu, 14 môn, 10 lựa chọn**;
+  "MMLU-Pro necessitates chain-of-thought (CoT)". Task lm-eval `mmlu_pro`: 5-shot CoT, greedy, max 2,048 token, trích "answer is (X)".
+- GSM8K — Cobbe et al. (2021), arXiv 2110.14168 (`files/gsm8k2021-cobbe.pdf`): 7.5K train / **1K test** (bản HF `openai/gsm8k` có 1,319 câu test);
+  task `gsm8k`: 5-shot, greedy, trích "#### số".
+- IFEval — Zhou et al. (2023), arXiv 2311.07911 (`files/ifeval2023-zhou.pdf`): **25 loại** chỉ dẫn kiểm được bằng luật, **541 prompt**;
+  task `ifeval`: 0-shot, greedy, max 1,280 token, chấm bằng luật (không cần model giám khảo).
+- lm-eval 0.4.13 (PyPI, phát hành 2026-08-31): `--samples` chọn đúng chỉ số câu theo task (tập con ngẫu nhiên có seed), `--use_cache`
+  lưu từng câu đã trả lời (chạy tiếp được). Model kiểu API (`local-completions`) **không truyền `enable_thinking`** vào chat template
+  (`lm_eval/models/api_models.py` `apply_chat_template`) → P06 dùng lớp con nhỏ để render giống lúc đo tốc độ.
+
+### E12. Cách chấm đáp án số khi dùng LLM cho bài tài chính. ✅
+
+- **Long et al. (2025). *FinLFQA: Evaluating Attributed Text Generation of LLMs in Financial Long-Form Question Answering.*** arXiv 2510.06426.
+  Bản lưu: `files/finlfqa2025.pdf`. "a predicted number is considered correct if it matches the ground truth within a relative tolerance
+  of 0.01 (e.g., 3.965 is matched to 3.97)", kèm chuẩn hoá đơn vị (scale normalization).
+- **de Padua, Qureshi & Karakaplan (2023). *GPT-3 Models are Few-Shot Financial Reasoners.*** arXiv 2307.13617. Bản lưu:
+  `files/gpt3-financial-reasoners2023.pdf`. Báo execution accuracy trên FinQA theo dung sai "between 1% to 200% at 1% increments".
+- Tra: 2026-10-13. **Dùng cho:** P06 chấm FinQA-RAG đúng nếu lệch tương đối ≤ 1% (chính), báo thêm 0.1% và 5%; chấp nhận dạng phần trăm
+  vì đáp án gốc FinQA ghi phần trăm dạng phân số (0.14464).

@@ -1,0 +1,29 @@
+[16:47:10] server start (chưa chạy): bash scripts/serve_default.sh /root/results/p06r2/server/start-001.log --max-model-len 16384
+[16:52:59] server ready sau 349 s, KV cache = 28704 token
+[16:52:59] server vừa compile từ đầu (66 s > 10 s) → khởi động lại trước khi đo
+[16:52:59] server stop: bash scripts/stop_server.sh
+server đã tắt (pid 1213)
+[16:53:01] server start (bỏ lần khởi động compile từ đầu): bash scripts/serve_default.sh /root/results/p06r2/server/start-002.log --max-model-len 16384
+[16:55:11] server ready sau 130 s, KV cache = 37264 token
+[16:55:11] finqa-c32-r2: bắt đầu (gen)
+[16:56:00] finqa-c32-r2: khúc 1/12 xong sau 50 s
+[16:56:53] finqa-c32-r2: khúc 2/12 xong sau 52 s
+[16:57:45] finqa-c32-r2: khúc 3/12 xong sau 52 s
+[16:58:34] finqa-c32-r2: khúc 4/12 xong sau 50 s
+[16:59:23] finqa-c32-r2: khúc 5/12 xong sau 49 s
+[17:00:16] finqa-c32-r2: khúc 6/12 xong sau 53 s
+[17:01:06] finqa-c32-r2: khúc 7/12 xong sau 50 s
+[17:01:54] finqa-c32-r2: khúc 8/12 xong sau 48 s
+[17:02:43] finqa-c32-r2: khúc 9/12 xong sau 49 s
+[17:03:34] finqa-c32-r2: khúc 10/12 xong sau 51 s
+[17:04:24] finqa-c32-r2: khúc 11/12 xong sau 50 s
+[17:04:48] finqa-c32-r2: khúc 12/12 xong sau 24 s
+[17:04:48] finqa-c32-r2: xong 1147 mục sau 577 s
+[17:04:48] lm-gsm8k-r2: bắt đầu (lmeval)
+[17:15:40] lm-gsm8k-r2: xong 1 mục sau 652 s
+[17:15:40] lm-ifeval-r2: bắt đầu (lmeval)
+[17:20:50] lm-ifeval-r2: xong 1 mục sau 311 s
+[17:20:50] lm-mmlu-pro-r2: bắt đầu (lmeval)
+[17:34:25] lm-mmlu-pro-r2: xong 14 mục sau 814 s
+[17:34:25] xong toàn bộ
+REMOTE_QUALITY_DONE 2026-10-13T17:34:25+00:00

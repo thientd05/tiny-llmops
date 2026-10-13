@@ -1,0 +1,73 @@
+[14:10:56] server start (chưa chạy): bash scripts/serve_default.sh /root/results/p06/server/start-001.log --max-model-len 16384
+[14:16:40] server ready sau 345 s, KV cache = 28704 token
+[14:16:40] server vừa compile từ đầu (67 s > 10 s) → khởi động lại trước khi đo
+[14:16:40] server stop: bash scripts/stop_server.sh
+server đã tắt (pid 1323)
+[14:16:43] server start (bỏ lần khởi động compile từ đầu): bash scripts/serve_default.sh /root/results/p06/server/start-002.log --max-model-len 16384
+[14:18:51] server ready sau 128 s, KV cache = 37264 token
+[14:18:51] ref-gen-c8-r1: bắt đầu (gen)
+[14:20:29] ref-gen-c8-r1: khúc 1/10 xong sau 99 s
+[14:22:03] ref-gen-c8-r1: khúc 2/10 xong sau 94 s
+[14:23:44] ref-gen-c8-r1: khúc 3/10 xong sau 101 s
+[14:25:30] ref-gen-c8-r1: khúc 4/10 xong sau 106 s
+[14:27:11] ref-gen-c8-r1: khúc 5/10 xong sau 101 s
+[14:28:44] ref-gen-c8-r1: khúc 6/10 xong sau 93 s
+[14:30:17] ref-gen-c8-r1: khúc 7/10 xong sau 94 s
+[14:31:52] ref-gen-c8-r1: khúc 8/10 xong sau 95 s
+[14:33:23] ref-gen-c8-r1: khúc 9/10 xong sau 91 s
+[14:37:51] ref-gen-c8-r1: khúc 10/10 xong sau 268 s
+[14:37:51] ref-gen-c8-r1: xong 1000 mục sau 1140 s
+[14:37:51] ref-gen-c8-r2: bắt đầu (gen)
+[14:39:30] ref-gen-c8-r2: khúc 1/10 xong sau 99 s
+[14:41:04] ref-gen-c8-r2: khúc 2/10 xong sau 93 s
+[14:42:45] ref-gen-c8-r2: khúc 3/10 xong sau 101 s
+[14:44:30] ref-gen-c8-r2: khúc 4/10 xong sau 106 s
+[14:46:09] ref-gen-c8-r2: khúc 5/10 xong sau 99 s
+[14:47:41] ref-gen-c8-r2: khúc 6/10 xong sau 91 s
+[14:49:15] ref-gen-c8-r2: khúc 7/10 xong sau 94 s
+[14:50:49] ref-gen-c8-r2: khúc 8/10 xong sau 94 s
+[14:52:20] ref-gen-c8-r2: khúc 9/10 xong sau 91 s
+[14:56:48] ref-gen-c8-r2: khúc 10/10 xong sau 268 s
+[14:56:48] ref-gen-c8-r2: xong 1000 mục sau 1137 s
+[14:56:48] ref-gen-c64-r1: bắt đầu (gen)
+[14:57:30] ref-gen-c64-r1: khúc 1/10 xong sau 41 s
+[14:58:09] ref-gen-c64-r1: khúc 2/10 xong sau 40 s
+[14:58:55] ref-gen-c64-r1: khúc 3/10 xong sau 46 s
+[14:59:43] ref-gen-c64-r1: khúc 4/10 xong sau 48 s
+[15:00:30] ref-gen-c64-r1: khúc 5/10 xong sau 47 s
+[15:01:39] ref-gen-c64-r1: khúc 6/10 xong sau 69 s
+[15:02:55] ref-gen-c64-r1: khúc 7/10 xong sau 76 s
+[15:04:08] ref-gen-c64-r1: khúc 8/10 xong sau 73 s
+[15:05:20] ref-gen-c64-r1: khúc 9/10 xong sau 71 s
+[15:09:48] ref-gen-c64-r1: khúc 10/10 xong sau 269 s
+[15:09:49] ref-gen-c64-r1: xong 1000 mục sau 780 s
+[15:09:49] ref-tf-c1-r1: bắt đầu (tf)
+[15:10:28] ref-tf-c1-r1: khúc 1/2 xong sau 36 s
+[15:11:02] ref-tf-c1-r1: khúc 2/2 xong sau 34 s
+[15:11:02] ref-tf-c1-r1: xong 200 mục sau 73 s
+[15:11:02] ref-tf-c8-r1: bắt đầu (tf)
+[15:11:27] ref-tf-c8-r1: khúc 1/2 xong sau 22 s
+[15:11:47] ref-tf-c8-r1: khúc 2/2 xong sau 21 s
+[15:11:48] ref-tf-c8-r1: xong 200 mục sau 46 s
+[15:11:48] finqa-c32-r1: bắt đầu (gen)
+[15:12:37] finqa-c32-r1: khúc 1/12 xong sau 49 s
+[15:13:29] finqa-c32-r1: khúc 2/12 xong sau 52 s
+[15:14:22] finqa-c32-r1: khúc 3/12 xong sau 52 s
+[15:15:12] finqa-c32-r1: khúc 4/12 xong sau 50 s
+[15:16:00] finqa-c32-r1: khúc 5/12 xong sau 48 s
+[15:16:51] finqa-c32-r1: khúc 6/12 xong sau 51 s
+[15:17:42] finqa-c32-r1: khúc 7/12 xong sau 51 s
+[15:18:30] finqa-c32-r1: khúc 8/12 xong sau 48 s
+[15:19:18] finqa-c32-r1: khúc 9/12 xong sau 49 s
+[15:20:09] finqa-c32-r1: khúc 10/12 xong sau 51 s
+[15:20:59] finqa-c32-r1: khúc 11/12 xong sau 50 s
+[15:21:24] finqa-c32-r1: khúc 12/12 xong sau 25 s
+[15:21:24] finqa-c32-r1: xong 1147 mục sau 576 s
+[15:21:24] lm-gsm8k: bắt đầu (lmeval)
+[15:32:14] lm-gsm8k: xong 1 mục sau 650 s
+[15:32:14] lm-ifeval: bắt đầu (lmeval)
+[15:37:31] lm-ifeval: xong 1 mục sau 317 s
+[15:37:31] lm-mmlu-pro: bắt đầu (lmeval)
+[15:51:08] lm-mmlu-pro: xong 14 mục sau 818 s
+[15:51:08] xong toàn bộ
+REMOTE_QUALITY_DONE 2026-10-13T15:51:08+00:00

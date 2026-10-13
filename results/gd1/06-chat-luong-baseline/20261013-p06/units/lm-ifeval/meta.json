@@ -1,0 +1,52 @@
+{
+  "finished": "2026-10-13T15:37:31+00:00",
+  "git_commit": "7610455c50ac6523ecf313999681667afdb6cdc0+dirty(P06 bước 1, chưa commit)",
+  "hostname": "40597a582832",
+  "items": 1,
+  "machine": "host=506934 machine=116596 instance=55753483",
+  "server": {
+    "cmd": "bash scripts/serve_default.sh /root/results/p06/server/start-002.log --max-model-len 16384",
+    "init_engine_s": 39.85,
+    "kv_cache_gib": 3.41,
+    "kv_cache_tokens": 37264,
+    "load_weights_s": 24.5,
+    "log": "server/start-002.log",
+    "max_concurrency_at": [
+      16384,
+      2.27
+    ],
+    "ready_s": 128.0,
+    "reason": "bỏ lần khởi động compile từ đầu",
+    "reused_running_server": false,
+    "start_index": 2,
+    "time": "2026-10-13T14:18:51+00:00",
+    "torch_compile_s": 1.28
+  },
+  "spec": {
+    "concurrency": 32,
+    "id": "lm-ifeval",
+    "kind": "lmeval",
+    "lmeval": {
+      "max_gen_toks": 1024,
+      "max_length": 16384,
+      "python": "/root/lmeval-venv/bin/python",
+      "seed": 1234,
+      "version": "lm-eval==0.4.13"
+    },
+    "sampling": {
+      "temperature": 0
+    },
+    "server_start": "bash scripts/serve_default.sh {log} --max-model-len 16384",
+    "software": {
+      "env": "VLLM_SERVER_DEV_MODE=1",
+      "image": "nvidia/cuda:13.0.2-devel-ubuntu22.04",
+      "model": "Qwen/Qwen3-30B-A3B-GPTQ-Int4@9b534e4318b7ebc3c961a839f13eb18b1833f441",
+      "torch": "2.13.0+cu130",
+      "vllm": "0.30.0"
+    },
+    "tasks": "ifeval"
+  },
+  "spec_sha256": "d37c4bbf720f2bdc37a36ca7ddf4af9d9d092b7e3917c265deeb10517c5448ad",
+  "unit": "lm-ifeval",
+  "unit_s": 316.8
+}

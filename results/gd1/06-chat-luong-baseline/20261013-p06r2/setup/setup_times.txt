@@ -1,0 +1,6 @@
+--- 2026-10-13T16:42:58+00:00
+uv_ready 2s
+model_downloaded 182s
+vllm_installed 190s
+all_done 190s
+16G	/root/models/Qwen3-30B-A3B-GPTQ-Int4

@@ -63,13 +63,21 @@ async def completions(request):
     a = st.a
     body = await request.json()
     prompt = body.get("prompt", "")
-    n_in = max(1, len(prompt) // 4)
+    if isinstance(prompt, list) and prompt and isinstance(prompt[0], (list, str)):
+        prompt = prompt[0]  # lm-eval gửi batch 1 phần tử
+    if isinstance(prompt, list):  # danh sách token id
+        prompt_ids = [int(x) for x in prompt]
+        prompt = " ".join(map(str, prompt_ids))
+        n_in = len(prompt_ids)
+    else:
+        prompt_ids = None
+        n_in = max(1, len(prompt) // 4)
     n_out = int(body.get("max_tokens") or 16)
     stream = bool(body.get("stream"))
     t_arr = time.perf_counter()
     st.active += 1
     st.prompt_tokens += n_in
-    cached = st.lookup(prompt)
+    cached = st.lookup(prompt) if isinstance(prompt, str) else None
     usage = {"prompt_tokens": n_in, "completion_tokens": n_out}
     if cached is not None:
         usage["prompt_tokens_details"] = {"cached_tokens": cached}
@@ -93,7 +101,8 @@ async def completions(request):
         if not stream:
             await asyncio.sleep(step() * n_out)
             st.gen_tokens += n_out
-            return web.json_response({"choices": [{"text": "x " * n_out}], "usage": usage})
+            return web.json_response({"choices": [extras(a, body, prompt, prompt_ids, n_out, st.running)],
+                                      "usage": usage})
         resp = web.StreamResponse(headers={"Content-Type": "text/event-stream"})
         await resp.prepare(request)
 
@@ -117,6 +126,63 @@ async def completions(request):
         st.running -= 1
         if st.sem is not None:
             st.sem.release()
+
+
+def fake_ids(text):
+    return [int(hashlib.blake2b(w.encode(), digest_size=4).hexdigest(), 16) % 150000 for w in text.split()] or [0]
+
+
+def fake_dist(ctx, k):
+    """Phân phối giả tất định theo ngữ cảnh: top-k (id, logprob) giảm dần."""
+    h = hashlib.blake2b(str(ctx).encode(), digest_size=16).digest()
+    base = int.from_bytes(h[:4], "big") % 150000
+    gap = 0.2 + (h[4] / 255) * 3.0  # độ chênh top1–top2
+    out, lp = [], -0.05
+    for i in range(k):
+        out.append(((base + 7919 * i) % 150000, round(lp, 6)))
+        lp -= gap if i == 0 else 0.5
+    return out
+
+
+def extras(a, body, prompt, prompt_ids, n_out, running):
+    """Choice không stream kiểu vLLM: text, token_ids, prompt_token_ids, logprobs (top-k), prompt_logprobs.
+    --noise p: mỗi bước, với xác suất p × (số request đang chạy / 8) chọn token hạng 2 (giả lập lệch do batch)."""
+    import random as _r
+    ids = prompt_ids if prompt_ids is not None else fake_ids(prompt)
+    k = int(body.get("logprobs") or 0)
+    out_ids, lps, tops = [], [], []
+    ctx = hash(tuple(ids)) & 0xFFFFFFFF
+    rng = _r.Random()
+    for j in range(n_out):
+        dist = fake_dist((ctx, j, tuple(out_ids[-2:])), max(k, 2))
+        pick = 1 if a.noise and rng.random() < a.noise * max(1, running) / 8 else 0
+        tid, lp = dist[pick]
+        out_ids.append(tid)
+        lps.append(lp)
+        tops.append({f"token_id:{t}" if body.get("return_tokens_as_token_ids") else str(t): l for t, l in dist[:k]})
+    text = " ".join("x" for _ in out_ids)
+    if "Answer:" in prompt or "answer" in prompt[-400:]:
+        text += "\nAnswer: 42"
+    ch = {"index": 0, "text": text, "finish_reason": "length"}
+    if body.get("return_token_ids"):
+        ch["token_ids"] = out_ids
+        ch["prompt_token_ids"] = ids
+    if k:
+        toks = [f"token_id:{t}" if body.get("return_tokens_as_token_ids") else str(t) for t in out_ids]
+        ch["logprobs"] = {"tokens": toks, "token_logprobs": lps, "top_logprobs": tops, "text_offset": list(range(len(toks)))}
+    pk = body.get("prompt_logprobs")
+    if pk:
+        pls = [None]
+        for j in range(1, len(ids)):
+            dist = fake_dist((hash(tuple(ids[:j])) & 0xFFFFFFFF, "p"), int(pk))
+            if a.noise and rng.random() < a.noise * max(1, running) / 8:
+                dist = [(t, round(l - 0.01, 6)) for t, l in dist]
+            d = {str(t): {"logprob": l, "rank": r + 1, "decoded_token": "x"} for r, (t, l) in enumerate(dist)}
+            if str(ids[j]) not in d:
+                d[str(ids[j])] = {"logprob": -9.0, "rank": 500, "decoded_token": "x"}
+            pls.append(d)
+        ch["prompt_logprobs"] = pls
+    return ch
 
 
 async def health(request):
@@ -163,6 +229,7 @@ def main():
     ap.add_argument("--slowdown", type=float, default=0.02, help="queue: mỗi request đang chạy làm bước chậm thêm")
     ap.add_argument("--chunk-tokens", type=int, default=25)
     ap.add_argument("--prefix-cache-blocks", type=int, default=0, help="> 0: bật prefix cache giả (số khối 64 ký tự)")
+    ap.add_argument("--noise", type=float, default=0.0, help="xác suất chọn token hạng 2 mỗi bước (× số request chạy / 8)")
     ap.add_argument("--model", default="Qwen/Qwen3-30B-A3B-GPTQ-Int4")
     a = ap.parse_args()
     app = web.Application(client_max_size=64 * 1024 * 1024)

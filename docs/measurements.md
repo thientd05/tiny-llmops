@@ -5,6 +5,113 @@
 
 ---
 
+## 2026-10-14 — P06 lần 2: chạy lại các bài chấm điểm của baseline → flips tự nhiên
+
+Kết quả thô: `results/gd1/06-chat-luong-baseline/20261013-p06r2/` (`self_flips.md`, `self_flips.json`, `units/<id>-r2/`; 30 MB).
+Cấu hình `quality/configs/p06-r2.yaml` = 4 đơn vị chấm điểm của `p06.yaml`, y nguyên tham số, đơn vị mới `-r2` (không dùng cache lm-eval lần 1).
+
+| Trường | Giá trị |
+|---|---|
+| Thời gian | thuê 23:42 (13/10) → destroy 00:35:31 (14/10) = 53 phút; chạy đo 23:55 → 00:34 |
+| Máy | instance 55776612, **host 506934 / machine 116596** (cùng máy P06 lần 1; driver 595.84), $0.305/h. Chờ máy này thay vì dùng host khác (570878) để không lẫn lệch do đổi máy |
+| Chi phí | tín dụng $5.869 → $5.549 = **$0.320 ≈ 8,400 VND** |
+| Lệnh | `bash quality/remote_quality.sh quality/configs/p06-r2.yaml /root/results/p06r2`; local `quality/analyze.py --self-flips <p06> <p06r2>` |
+
+Thời gian đơn vị: FinQA 9.6 phút, GSM8K 10.9, IFEval 5.2, MMLU-Pro 13.6 (bằng lần 1).
+
+**Điểm lần 2:** FinQA 60.1 (1%) / 54.0 (0.1%) / 62.0 (5%); GSM8K 91.4 flexible / 90.7 strict; IFEval strict 83.5 / loose 86.9; MMLU-Pro **67.4**.
+
+**Flips tự nhiên lần 1 vs lần 2** (paired, Miller E3; flips theo Dutta E4):
+
+| Bài (chỉ số) | n | Hiệu r2 − r1 (điểm) | paired SE | CI 95% của hiệu | Flips đúng→sai / sai→đúng | Flips |
+|---|---|---|---|---|---|---|
+| FinQA dung sai 1% | 1,147 | +0.87 | 0.63 | −0.36 … +2.10 | 21 / 31 | **4.5%** |
+| FinQA dung sai 0.1% / 5% | 1,147 | +0.35 / +0.87 | 0.63 / 0.60 | | 24 / 28 · 19 / 29 | 4.5% / 4.2% |
+| GSM8K flexible / strict | 1,319 | +0.08 / +0.30 | 0.35 / 0.37 | −0.61 … +0.76 / −0.42 … +1.03 | 10 / 11 · 10 / 14 | **1.6%** / 1.8% |
+| IFEval prompt strict / loose | 541 | −1.11 / 0.00 | 0.98 / 0.98 | −3.03 … +0.81 / −1.92 … +1.92 | 17 / 11 · 14 / 14 | **5.2%** / 5.2% |
+| MMLU-Pro custom-extract | 1,000 | **−1.60** | 0.81 | **−3.19 … −0.01** | 41 / 25 | **6.6%** |
+
+- FinQA: đáp án trích ra khác nhau giữa 2 lần ở 15.1% câu (nhưng phần lớn vẫn cùng đúng / cùng sai).
+- MMLU-Pro: cùng cấu hình mà hiệu −1.6 điểm có CI 95% paired vừa không chứa 0 → kiểm định paired một lần chạy có thể báo "khác biệt"
+  giả. Với 8 cặp chỉ số so cùng lúc, kỳ vọng ~0.4 kết quả giả ở mức 5%.
+---
+
+## 2026-10-13 — P06: chất lượng baseline + output tham chiếu + mức tự lệch (vLLM 0.30.0 mặc định, L4)
+
+Báo cáo: [gd1-vllm-baseline/06-chat-luong-baseline/bao-cao.md](gd1-vllm-baseline/06-chat-luong-baseline/bao-cao.md).
+Kết quả thô: `results/gd1/06-chat-luong-baseline/20261013-p06/` (`summary.md`, `summary.json`, `finqa_per_question.json`,
+`<task>_per_doc.json`, `units/<id>/`; 129 MB).
+
+| Trường | Giá trị |
+|---|---|
+| Thời gian | thuê 21:05:19 → destroy 22:51:59 (13/10, +07) = 1.78 h; chạy đo 21:18:51 → 22:51:08 |
+| Máy | instance 55753483, **host 506934 / machine 116596** (máy của P03/P04), $0.306/h trọn gói |
+| Chi phí | tín dụng $6.461 → $5.869 = **$0.592 ≈ 15,500 VND** |
+| Checklist | L4 23,034 MiB, driver 595.84, 72 W, 140 GB đĩa, 94 GB RAM, 30 vCPU; ncu ERR_NVGPUCTRPERM |
+| Cài đặt | model 158 s, vLLM 192 s; lm-eval 0.4.13 + transformers 5.19.0 + datasets 5.1.0 (`setup/lmeval-freeze.txt`) |
+| Server | `serve_default.sh --max-model-len 16384` (baseline đúng nghĩa, không cờ thêm). Lần 1 compile từ đầu 66.9 s → KV 28,704 → tự bật lại; lần 2 compile 1.3 s → **KV 37,264** (= P04) |
+| Cấu hình | `quality/configs/p06.yaml`; greedy, `enable_thinking=False`; dữ liệu sha256 như mục "P06 bước 1" |
+| Lệnh | `bash quality/remote_quality.sh quality/configs/p06.yaml /root/results/p06`; local `quality/analyze.py --out <dir>` |
+
+**Thời gian từng đơn vị:** ref-gen c8 r1 / r2 / c64 r1 = 19.0 / 19.0 / 13.0 phút; teacher forcing c1 / c8 = 1.2 / 0.8 phút;
+FinQA 9.6; GSM8K 10.8; IFEval 5.3; MMLU-Pro 13.6 phút.
+
+**Điểm tác vụ** (CI 95% = p ± 1.96·√(p(1−p)/n)):
+
+| Tác vụ | n | Điểm | CI 95% | Số công bố (Qwen, bản gốc, non-thinking, lấy mẫu T = 0.7) |
+|---|---|---|---|---|
+| MMLU-Pro (custom-extract, 5-shot CoT, tập con ngẫu nhiên) | 1,000 | **69.0** | 66.1–71.9 | 69.1 (model card 2507, cột "Qwen3-30B-A3B Non-Thinking") |
+| IFEval prompt-level strict | 541 | **84.7** | 81.6–87.7 | 83.7 (tech report Bảng 16, "IFEval strict prompt") |
+| IFEval prompt-level loose / inst-level strict / inst-level loose | 541 | 86.9 / 89.6 / 91.1 | | |
+| GSM8K flexible-extract (chính) / strict-match, 5-shot | 1,319 | **91.4** / 90.4 | 89.8–92.9 / 88.8–92.0 | (chỉ có bản Base: 91.81) |
+| **FinQA-RAG** dung sai 1% (chính) / 0.1% / 5% | 1,147 | **59.2** / 53.6 / 61.1 | 56.4–62.0 / 50.7–56.5 / 58.3–63.9 | — |
+
+- MMLU-Pro theo môn: math 90.2, biology 90.0, economics 84.3, health 76.5, chemistry 72.3, business 71.2, physics 69.4, CS 67.6,
+  psychology 66.7, history 65.6, other 64.9, philosophy 58.5, engineering 50.6, **law 34.1**. 25 câu (2.5%) không trích được "answer is (X)".
+- GSM8K: strict-match không trích được 23 câu; trả lời dài nhất 1,179 ký tự (không chạm max_gen_toks 1,024).
+- FinQA: 60 câu không có số trong dòng Answer — đều là từ chối ("not enough information", "cannot be determined..."); 9 câu không có
+  dòng Answer; 0 câu bị cắt độ dài; prompt dài nhất 3,183 token (không tài liệu nào bị cắt bởi giới hạn 4k).
+
+**Mức tự lệch** (1,000 prompt tham chiếu, greedy 256 token; 435 dừng tự nhiên, 565 chạm 256):
+
+| So sánh | Giống hệt | Vị trí lệch p10 / p50 / p90 | Còn giống tới 16 / 64 / 128 | Δp đoạn chung mean / RMS / p1 / p99 | KL≈ mean / p99 / p99.9 | Độ phủ top-20 | Chênh top1−top2 ở điểm lệch p50 / p90 |
+|---|---|---|---|---|---|---|---|
+| c8 r1 vs c8 r2 | **23.1%** | 5 / **46** / 143 | 84.3% / 53.2% / 33.7% | 0.00006 / 0.0186 / −0.0561 / +0.0574 | 0.0015 / 0.026 / 0.139 | 0.999 | 0.037 / 0.240 |
+| c8 r1 vs c64 r1 | **24.5%** | 5 / 46 / 147 | — / 53.6% / — | −0.00012 / 0.0193 / −0.0607 / +0.0578 | 0.0016 / 0.029 / 0.149 | 0.999 | 0.036 / 0.245 |
+
+Theo nguồn prompt (c8 r1 vs c8 r2, giống hệt % / vị trí lệch p50): ShareGPT 20.6% / 49; CUAD 13.0% / 77; techqa 10.9% / 45;
+tatqa 43.8% / 32.5; delucionqa 32.9% / 48; emanual 18.4% / 35.
+
+**Teacher forcing** (200 prompt ≤ 300 token + 256 token output của c8 r1, 44,976 vị trí): c1 vs c8 **same top-1 99.10% ± 0.09**;
+Δp mean 0.0002, RMS 0.0171, p1 −0.0474, p99 +0.0488, max |Δp| 0.93; KL≈ mean 0.0014, p99 0.017, p99.9 0.079; độ phủ top-20 0.998.
+---
+
+## 2026-10-13 — P06 bước 1: bộ dữ liệu đo chất lượng + thử harness với server giả (local, không GPU)
+
+Plan + quyết định: [gd1-vllm-baseline/06-chat-luong-baseline/plan.md](gd1-vllm-baseline/06-chat-luong-baseline/plan.md) mục "Quyết định đã chốt".
+Lệnh: `.venv/bin/python quality/build_sets.py` (seed 20261013, 22 s). Nguồn ghim: MMLU-Pro `TIGER-Lab/MMLU-Pro@b189ec76`, FinQA `czyssrs/FinQA@0f16e286`
+(`dataset/test.json`), RAGBench / ShareGPT / tokenizer như P02.
+
+| Bộ | Nội dung | sha256 |
+|---|---|---|
+| `data/quality/reference.jsonl` | 1000 prompt: ShareGPT 500 (TB 369 token), RAGBench test techqa 129 / tatqa 160 / delucionqa 73 / emanual 38 (TB 3284 / 1331 / 1654 / 1311), CUAD 100 (TB 5582); 200 prompt ngắn (≤ 300 token) cho teacher forcing | `54f2f731d02f…` |
+| `data/quality/finqa_rag.jsonl` | 1147 câu (RAGBench finqa test, mỗi id 1 câu), 20 câu yes/no; prompt TB 1700, max 3183 token; 0 câu bỏ (1,138/1,138 câu hỏi khớp FinQA test) | `bd637fb7da46…` |
+| `data/quality/mmlu_pro_samples.json` | 1,000 / 12,032 câu MMLU-Pro, theo tỉ lệ 14 môn (math 112, physics 108, chemistry 94, law 91 … history 32) | `705c194f7e1f…` |
+
+- Ứng viên W2-like ở RAGBench test: ≥ 2k token chỉ 180, ≥ 1k có 472 → bộ tham chiếu dùng prompt 1–4k token.
+- Tập test gốc (HF datasets-server, 2026-10-13): GSM8K test 1,319; MMLU-Pro test 12,032 / validation 70; IFEval 541.
+
+**Thử với server giả** (`quality/configs/test-fake-p06.yaml`, `bench/fake_server.py --noise 0.02`; số đo vô nghĩa, chỉ kiểm đường chạy):
+
+| Kiểm tra | Kết quả |
+|---|---|
+| Chạy đủ 9 đơn vị (3 gen tham chiếu, 2 teacher forcing, FinQA, GSM8K / IFEval / MMLU-Pro qua lm-eval 0.4.13) | 3.7 phút, mã thoát 0 |
+| Prompt lm-eval gửi đi (model `local-completions-nothink`) | kết thúc bằng `<\|im_start\|>assistant\n<think>\n\n</think>\n\n` — giống lúc đo tốc độ |
+| `--samples` MMLU-Pro (2 câu × 14 môn) | 28 câu, chỉ số khớp đúng; câu lm-eval đọc = câu trong parquet ở chỉ số đó |
+| `kill -9` giữa đơn vị gen rồi chạy lại | 3 khúc đã xong giữ nguyên (mtime không đổi), chạy tiếp tới hết |
+| `quality/test_analyze.py` (bộ đọc đáp án FinQA 14 trường hợp + KL) | OK sau khi sửa lỗi lấy nhầm số trong trích dẫn "[Document 2]" |
+---
+
 ## 2026-10-13 — P05: W4 tải giống thật trên L4 (vLLM 0.30.0 mặc định)
 
 Báo cáo: [gd1-vllm-baseline/05-w4-tai-giong-that/bao-cao.md](gd1-vllm-baseline/05-w4-tai-giong-that/bao-cao.md).

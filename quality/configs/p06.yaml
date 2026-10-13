@@ -1,0 +1,42 @@
+# P06 — chất lượng baseline (vLLM 0.30.0 mặc định + --max-model-len 16384) trên L4.
+# Chạy trên máy thuê:  bash quality/remote_quality.sh quality/configs/p06.yaml /root/results/p06
+# Quyết định + bằng chứng: docs/gd1-vllm-baseline/06-chat-luong-baseline/plan.md, docs/references nhóm E.
+sets:
+  reference: data/quality/reference.jsonl      # 1,000 prompt (500 W1-like, 400 W2-like, 100 W3-like), 200 cờ tf
+  finqa_rag: data/quality/finqa_rag.jsonl      # 1,147 câu FinQA test dựng như W2, đáp án gốc exe_ans
+units:
+  # output tham chiếu + mức tự lệch: cùng bộ prompt, greedy, 256 token, top-20 logprob mỗi vị trí
+  - {id: ref-gen-c8-r1,  kind: gen, set: reference, concurrency: 8,  max_tokens: 256, logprobs: 20}
+  - {id: ref-gen-c8-r2,  kind: gen, set: reference, concurrency: 8,  max_tokens: 256, logprobs: 20}
+  - {id: ref-gen-c64-r1, kind: gen, set: reference, concurrency: 64, max_tokens: 256, logprobs: 20}
+  # teacher forcing (prompt ngắn ≤ 300 token + 256 token output của ref-gen-c8-r1): chỉ số kiểu llama.cpp
+  - {id: ref-tf-c1-r1, kind: tf, set: reference, source: ref-gen-c8-r1, concurrency: 1, prompt_logprobs: 20}
+  - {id: ref-tf-c8-r1, kind: tf, set: reference, source: ref-gen-c8-r1, concurrency: 8, prompt_logprobs: 20}
+  # độ chính xác RAG (FinQA, chấm dung sai tương đối 1%)
+  - {id: finqa-c32-r1, kind: gen, set: finqa_rag, concurrency: 32, max_tokens: 768, logprobs: 0}
+  # tác vụ chuẩn (lm-eval 0.4.13, greedy, chat template enable_thinking=False)
+  - {id: lm-gsm8k,    kind: lmeval, tasks: gsm8k,    concurrency: 32}
+  - {id: lm-ifeval,   kind: lmeval, tasks: ifeval,   concurrency: 32}
+  - {id: lm-mmlu-pro, kind: lmeval, tasks: mmlu_pro, concurrency: 32, samples: data/quality/mmlu_pro_samples.json}
+lmeval:
+  python: /root/lmeval-venv/bin/python
+  version: lm-eval==0.4.13
+  max_length: 16384
+  max_gen_toks: 1024   # task không tự đặt (gsm8k) dùng giá trị này; mmlu_pro 2048, ifeval 1280 theo yaml của task
+  seed: 1234
+server:
+  start: "bash scripts/serve_default.sh {log} --max-model-len 16384"
+  stop: "bash scripts/stop_server.sh"
+  base_url: http://localhost:8000
+  model: Qwen/Qwen3-30B-A3B-GPTQ-Int4
+  recompile_restart_s: 10
+  restart: never
+client:
+  tokenizer: /root/models/Qwen3-30B-A3B-GPTQ-Int4
+software:
+  vllm: 0.30.0
+  torch: 2.13.0+cu130
+  model: Qwen/Qwen3-30B-A3B-GPTQ-Int4@9b534e4318b7ebc3c961a839f13eb18b1833f441
+  image: nvidia/cuda:13.0.2-devel-ubuntu22.04
+  env: VLLM_SERVER_DEV_MODE=1
+warmup: {requests: 4, max_tokens: 16, path: data/workloads/w2.jsonl}

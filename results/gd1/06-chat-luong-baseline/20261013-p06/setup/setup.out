@@ -1,0 +1,6 @@
+downloading uv 0.12.19 x86_64-unknown-linux-gnu
+uv_ready 2s
+vllm_installed 192s
+all_done 192s
+16G	/root/models/Qwen3-30B-A3B-GPTQ-Int4
+env -> /root/results/p06/setup/env.txt

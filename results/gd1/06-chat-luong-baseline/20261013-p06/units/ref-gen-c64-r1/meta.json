@@ -1,0 +1,48 @@
+{
+  "finished": "2026-10-13T15:09:48+00:00",
+  "git_commit": "7610455c50ac6523ecf313999681667afdb6cdc0+dirty(P06 bước 1, chưa commit)",
+  "hostname": "40597a582832",
+  "items": 1000,
+  "machine": "host=506934 machine=116596 instance=55753483",
+  "server": {
+    "cmd": "bash scripts/serve_default.sh /root/results/p06/server/start-002.log --max-model-len 16384",
+    "init_engine_s": 39.85,
+    "kv_cache_gib": 3.41,
+    "kv_cache_tokens": 37264,
+    "load_weights_s": 24.5,
+    "log": "server/start-002.log",
+    "max_concurrency_at": [
+      16384,
+      2.27
+    ],
+    "ready_s": 128.0,
+    "reason": "bỏ lần khởi động compile từ đầu",
+    "reused_running_server": false,
+    "start_index": 2,
+    "time": "2026-10-13T14:18:51+00:00",
+    "torch_compile_s": 1.28
+  },
+  "spec": {
+    "concurrency": 64,
+    "id": "ref-gen-c64-r1",
+    "kind": "gen",
+    "logprobs": 20,
+    "max_tokens": 256,
+    "sampling": {
+      "temperature": 0
+    },
+    "server_start": "bash scripts/serve_default.sh {log} --max-model-len 16384",
+    "set": "reference",
+    "set_sha256": "54f2f731d02f967d3f938bce5ac19603c8c2ba1e0e3d6ff99087ad42c124bf13",
+    "software": {
+      "env": "VLLM_SERVER_DEV_MODE=1",
+      "image": "nvidia/cuda:13.0.2-devel-ubuntu22.04",
+      "model": "Qwen/Qwen3-30B-A3B-GPTQ-Int4@9b534e4318b7ebc3c961a839f13eb18b1833f441",
+      "torch": "2.13.0+cu130",
+      "vllm": "0.30.0"
+    }
+  },
+  "spec_sha256": "e3b712b2fca6b3900c43064929e65daa8ab23462a789fe0637b179741883600e",
+  "unit": "ref-gen-c64-r1",
+  "unit_s": 780.0
+}

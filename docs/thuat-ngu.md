@@ -81,6 +81,15 @@
 | Trace | Bản ghi thời điểm đến (và độ dài) của request từ hệ thống thật, dùng để phát lại |
 | Baseline | Kết quả mốc để so sánh; ở dự án này là vLLM cấu hình mặc định |
 | Roofline / % băng thông | So tốc độ thực của kernel với giới hạn phần cứng (L4: 300 GB/s băng thông bộ nhớ) |
+| Flips | % câu hỏi đổi đúng → sai hoặc sai → đúng giữa hai cấu hình. Độ chính xác có thể gần như không đổi trong khi flips lớn (Dutta 2024: tới 13.6% khi lượng tử hoá) |
+| Paired SE | Sai số chuẩn của hiệu điểm giữa hai cấu hình tính theo từng câu (cùng bộ câu hỏi). Nhỏ hơn nhiều so với so hai điểm riêng lẻ khi hai cấu hình trả lời giống nhau phần lớn (Miller 2024) |
+| CI 95% | Khoảng tin cậy 95% của điểm: p ± 1.96·√(p(1−p)/n). Hai điểm có CI chồng lên nhau thì chưa nói được bên nào hơn |
+| Teacher forcing | Đưa nguyên văn bản tham chiếu vào model làm prompt rồi đọc xác suất từng vị trí; mọi cấu hình được so trên cùng ngữ cảnh (cách llama.cpp đo KL) |
+| Same top-1 | % vị trí hai cấu hình chọn cùng token xác suất cao nhất (llama.cpp gọi là "same top p") |
+| Δp | Xác suất của token tham chiếu ở cấu hình mới trừ cấu hình gốc. Phân bố đối xứng quanh 0 = chỉ thêm nhiễu; lệch về phía âm = model kém đi |
+| Độ phủ top-20 | Tổng xác suất của 20 token cao nhất. Gần 1 thì KL tính từ top-20 sai ít |
+| Mức tự lệch | Mức khác nhau giữa hai lần chạy của chính vLLM mặc định (cùng prompt, greedy) do batch khác nhau. Ngưỡng để phán một tối ưu "có làm sai không" |
+| Execution accuracy | % câu FinQA có đáp án số đúng (P06: đúng nếu lệch tương đối ≤ 1%) |
 
 ## Công cụ & phần mềm
 
