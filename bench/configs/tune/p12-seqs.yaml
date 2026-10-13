@@ -1,0 +1,13 @@
+# P12 (N4, preemption W1) trên nền cfg1 = kv8 (P09). Biến thể seqs: không nhận quá 133 request chạy cùng lúc = số request chạy p50 của cfg1 ở W1/140 (tài liệu vLLM: giảm max_num_seqs khi preemption nhiều; references F1).
+# Đo W1 ×1 seed 1001 ở lo = 140 (kiểm không kém đi) và 164 (mức cfg1 đã trượt, ≥ lo + 2 bước; so cặp được với cfg1 cùng seed).
+# Plan: docs/gd1-vllm-tune/12-preemption-w1/plan.md
+include: p09-kv8.yaml
+mode: grid
+points:
+  - {w: w1, n: 140}
+  - {w: w1, n: 164}
+workloads:
+  w2: null
+  w3: null
+server:
+  start: "bash scripts/serve_default.sh {log} --max-model-len 16384 --kv-cache-dtype fp8 --gpu-memory-utilization 0.95 --max-num-seqs 133"

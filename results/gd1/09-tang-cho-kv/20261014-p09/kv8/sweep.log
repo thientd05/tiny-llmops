@@ -1,0 +1,41 @@
+[20:23:29] đợt mới: 6 đơn vị: w1-c72-r1, w1-c88-r1, w2-c20-r1, w2-c26-r1, w3-c8-r1, w3-c12-r1
+[20:23:29] server start (chưa chạy): bash scripts/serve_default.sh /root/results/p09/kv8/server/start-001.log --max-model-len 16384 --kv-cache-dtype fp8 --gpu-memory-utilization 0.95
+[20:23:29] server ready sau 0 s, KV cache = None token (None, attention None) (dùng lại server đang chạy)
+[20:23:29] w1-c72-r1: N=72, 288 request, seed 1001, client vllm
+[20:25:55] w1-c72-r1: xong sau 143 s — TTFT p95 4503 ms, TPOT p95 86.1 ms, 770 tok/s ra, lỗi 0 → ĐẠT (cửa sổ all)
+[20:25:55] w1-c88-r1: N=88, 352 request, seed 1001, client vllm
+[20:28:35] w1-c88-r1: xong sau 156 s — TTFT p95 5220 ms, TPOT p95 95.1 ms, 863 tok/s ra, lỗi 0 → ĐẠT (cửa sổ all)
+[20:28:35] w2-c20-r1: N=20, 100 request, seed 1001, client vllm
+[20:30:21] w2-c20-r1: xong sau 104 s — TTFT p95 6823 ms, TPOT p95 95.3 ms, 208 tok/s ra, lỗi 0 → ĐẠT (cửa sổ all)
+[20:30:21] w2-c26-r1: N=26, 104 request, seed 1001, client vllm
+[20:32:05] w2-c26-r1: xong sau 101 s — TTFT p95 9773 ms, TPOT p95 115.5 ms, 224 tok/s ra, lỗi 0 → ĐẠT (cửa sổ all)
+[20:32:05] w3-c8-r1: N=8, 100 request, seed 1001, client vllm
+[20:36:22] w3-c8-r1: xong sau 255 s — TTFT p95 3360 ms, TPOT p95 65.6 ms, 127 tok/s ra, lỗi 0 → ĐẠT (cửa sổ all)
+[20:36:22] w3-c12-r1: N=12, 100 request, seed 1001, client vllm
+[20:40:19] w3-c12-r1: xong sau 234 s — TTFT p95 7719 ms, TPOT p95 87.2 ms, 140 tok/s ra, lỗi 0 → ĐẠT (cửa sổ all)
+[20:40:19] đợt mới: 3 đơn vị: w1-c132-r1, w2-c40-r1, w3-c18-r1
+[20:40:19] w1-c132-r1: N=132, 528 request, seed 1001, client vllm
+[20:43:31] w1-c132-r1: xong sau 188 s — TTFT p95 7567 ms, TPOT p95 118.5 ms, 1052 tok/s ra, lỗi 0 → ĐẠT (cửa sổ all)
+[20:43:31] w2-c40-r1: N=40, 160 request, seed 1001, client vllm
+[20:45:50] w2-c40-r1: xong sau 136 s — TTFT p95 13997 ms, TPOT p95 140.8 ms, 242 tok/s ra, lỗi 0 → TRƯỢT (cửa sổ all)
+[20:45:50] w3-c18-r1: N=18, 100 request, seed 1001, client vllm
+[20:49:40] w3-c18-r1: xong sau 227 s — TTFT p95 17251 ms, TPOT p95 99.3 ms, 145 tok/s ra, lỗi 0 → TRƯỢT (cửa sổ all)
+[20:49:40] đợt mới: 3 đơn vị: w1-c198-r1, w2-c32-r1, w3-c14-r1
+[20:49:40] w1-c198-r1: N=198, 792 request, seed 1001, client vllm
+[20:54:23] w1-c198-r1: xong sau 278 s — TTFT p95 25225 ms, TPOT p95 144.3 ms, 1036 tok/s ra, lỗi 0 → TRƯỢT (cửa sổ all)
+[20:54:23] w2-c32-r1: N=32, 128 request, seed 1001, client vllm
+[20:56:22] w2-c32-r1: xong sau 116 s — TTFT p95 11917 ms, TPOT p95 131.6 ms, 237 tok/s ra, lỗi 0 → TRƯỢT (cửa sổ all)
+[20:56:22] w3-c14-r1: N=14, 100 request, seed 1001, client vllm
+[21:00:11] w3-c14-r1: xong sau 227 s — TTFT p95 10612 ms, TPOT p95 96.4 ms, 144 tok/s ra, lỗi 0 → TRƯỢT (cửa sổ all)
+[21:00:11] đợt mới: 2 đơn vị: w1-c164-r1, w2-c28-r1
+[21:00:11] w1-c164-r1: N=164, 656 request, seed 1001, client vllm
+[21:04:09] w1-c164-r1: xong sau 233 s — TTFT p95 15333 ms, TPOT p95 131.5 ms, 1035 tok/s ra, lỗi 0 → TRƯỢT (cửa sổ all)
+[21:04:09] w2-c28-r1: N=28, 112 request, seed 1001, client vllm
+[21:05:55] w2-c28-r1: xong sau 104 s — TTFT p95 10739 ms, TPOT p95 121.4 ms, 230 tok/s ra, lỗi 0 → TRƯỢT (cửa sổ all)
+[21:05:55] đợt mới: 1 đơn vị: w1-c148-r1
+[21:05:55] w1-c148-r1: N=148, 592 request, seed 1001, client vllm
+[21:09:34] w1-c148-r1: xong sau 214 s — TTFT p95 10147 ms, TPOT p95 127.1 ms, 1032 tok/s ra, lỗi 0 → TRƯỢT (cửa sổ all)
+[21:09:34] đợt mới: 1 đơn vị: w1-c140-r1
+[21:09:34] w1-c140-r1: N=140, 560 request, seed 1001, client vllm
+[21:12:59] w1-c140-r1: xong sau 201 s — TTFT p95 8378 ms, TPOT p95 124.1 ms, 1035 tok/s ra, lỗi 0 → ĐẠT (cửa sổ all)
+[21:12:59] xong toàn bộ

@@ -1,0 +1,52 @@
+{
+  "finished": "2026-10-13T20:03:37+00:00",
+  "git_commit": null,
+  "hostname": "6757e4a94101",
+  "items": 1000,
+  "machine": "host=506934 machine=116596 instance=55797039",
+  "server": {
+    "attention_backend": "FLASHINFER",
+    "cmd": "bash scripts/serve_default.sh /root/results/p09/quality-kv8/server/start-004.log --max-model-len 16384 --kv-cache-dtype fp8 --gpu-memory-utilization 0.95",
+    "init_engine_s": 48.24,
+    "kv_cache_dtype": "fp8",
+    "kv_cache_gib": 3.72,
+    "kv_cache_tokens": 81328,
+    "load_weights_s": 25.74,
+    "log": "server/start-004.log",
+    "max_concurrency_at": [
+      16384,
+      4.96
+    ],
+    "max_num_batched_tokens": 2048,
+    "moe_backend": "MARLIN",
+    "ready_s": 134.4,
+    "reason": "chưa chạy",
+    "reused_running_server": false,
+    "start_index": 4,
+    "time": "2026-10-13T19:45:51+00:00",
+    "torch_compile_s": 0.5
+  },
+  "spec": {
+    "concurrency": 8,
+    "id": "ref-gen-c8-r1",
+    "kind": "gen",
+    "logprobs": 20,
+    "max_tokens": 256,
+    "sampling": {
+      "temperature": 0
+    },
+    "server_start": "bash scripts/serve_default.sh {log} --max-model-len 16384 --kv-cache-dtype fp8 --gpu-memory-utilization 0.95",
+    "set": "reference",
+    "set_sha256": "54f2f731d02f967d3f938bce5ac19603c8c2ba1e0e3d6ff99087ad42c124bf13",
+    "software": {
+      "env": "VLLM_SERVER_DEV_MODE=1",
+      "image": "nvidia/cuda:13.0.2-devel-ubuntu22.04",
+      "model": "Qwen/Qwen3-30B-A3B-GPTQ-Int4@9b534e4318b7ebc3c961a839f13eb18b1833f441",
+      "torch": "2.13.0+cu130",
+      "vllm": "0.30.0"
+    }
+  },
+  "spec_sha256": "78723f8b88a38db8164ac66600fbc3267c8a8c8d767ba5b47e31c00f36f6b2d9",
+  "unit": "ref-gen-c8-r1",
+  "unit_s": 1066.5
+}

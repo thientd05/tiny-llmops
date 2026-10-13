@@ -1,0 +1,3 @@
+# P12 (cùng phiên với P09, scripts/remote_multi.sh): preemption W1 trên nền cfg1 = kv8. Điều kiện chạy: 173 preemption ở W1/140 (≥ 50).
+bench   bench/configs/tune/p12-wm.yaml    /root/results/p09/p12-wm
+bench   bench/configs/tune/p12-seqs.yaml  /root/results/p09/p12-seqs

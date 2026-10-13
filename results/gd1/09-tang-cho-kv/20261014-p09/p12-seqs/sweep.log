@@ -1,0 +1,13 @@
+[21:23:44] đợt mới: 2 đơn vị: w1-c140-r1, w1-c164-r1
+[21:23:44] server start (chưa chạy): bash scripts/serve_default.sh /root/results/p09/p12-seqs/server/start-001.log --max-model-len 16384 --kv-cache-dtype fp8 --gpu-memory-utilization 0.95 --max-num-seqs 133
+[21:26:46] server ready sau 183 s, KV cache = 72368 token (fp8, attention FLASHINFER)
+[21:26:46] server vừa compile từ đầu (64 s > 10 s) → khởi động lại trước khi đo
+[21:26:46] server stop: bash scripts/stop_server.sh
+server đã tắt (pid 12720)
+[21:26:48] server start (bỏ lần khởi động compile từ đầu): bash scripts/serve_default.sh /root/results/p09/p12-seqs/server/start-002.log --max-model-len 16384 --kv-cache-dtype fp8 --gpu-memory-utilization 0.95 --max-num-seqs 133
+[21:28:42] server ready sau 114 s, KV cache = 89488 token (fp8, attention FLASHINFER)
+[21:28:42] w1-c140-r1: N=140, 560 request, seed 1001, client vllm
+[21:32:00] w1-c140-r1: xong sau 194 s — TTFT p95 7958 ms, TPOT p95 116.6 ms, 1077 tok/s ra, lỗi 0 → ĐẠT (cửa sổ all)
+[21:32:00] w1-c164-r1: N=164, 656 request, seed 1001, client vllm
+[21:35:50] w1-c164-r1: xong sau 225 s — TTFT p95 12822 ms, TPOT p95 117.0 ms, 1082 tok/s ra, lỗi 0 → TRƯỢT (cửa sổ all)
+[21:35:50] xong toàn bộ

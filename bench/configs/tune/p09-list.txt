@@ -1,0 +1,6 @@
+# P09 phiên 1 (scripts/remote_multi.sh): điểm mốc → cổng chất lượng kv8 (chạy trước, kv8 khởi động lần đầu ở đây) → tìm goodput kv8.
+# Teacher forcing kv8 ở 0.92 (tune-kv8-tf.yaml, OOM ở 0.95), ba bài còn lại ở 0.95. P12 (nếu điều kiện thoả) nối thêm dòng vào cuối.
+bench   bench/configs/tune/p09-anchor.yaml  /root/results/p09/anchor
+quality quality/configs/tune-kv8-tf.yaml    /root/results/p09/quality-kv8
+quality quality/configs/tune-kv8.yaml       /root/results/p09/quality-kv8
+bench   bench/configs/tune/p09-kv8.yaml     /root/results/p09/kv8

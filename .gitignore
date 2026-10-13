@@ -16,3 +16,7 @@ data/
 results/gd1/06-chat-luong-baseline/*/units/*/chunks/
 results/gd1/06-chat-luong-baseline/*/units/*/cache*
 results/gd1/06-chat-luong-baseline/*/units/*/out/**/samples_*.jsonl
+# P09 trở đi: tương tự cho cổng chất lượng của cấu hình tune (sha256 trong results/gd1/09-tang-cho-kv/HEAVY_FILES_SHA256.txt)
+results/gd1/*/*/quality-*/units/*/chunks/
+results/gd1/*/*/quality-*/units/*/cache*
+results/gd1/*/*/quality-*/units/*/out/**/samples_*.jsonl

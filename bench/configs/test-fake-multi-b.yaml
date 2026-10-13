@@ -1,0 +1,9 @@
+# Thử scripts/remote_multi.sh ở local: cấu hình B = biến thể kiểu kv8 (cờ server khác → server bật lại; khởi đầu nóng riêng
+# workload, grow/shrink như p09-kv8). Server giả sức chứa FAKE_K + 8 → goodput biết trước.
+include: test-fake.yaml
+server:
+  start: "bash bench/fake_serve.sh {log} --mode threshold --capacity $((FAKE_K + 8)) --token-s 0.0005 --chunk-tokens 50"
+  restart: never
+workloads:
+  w1: {path: data/workloads/w1.jsonl, warm_start: [40, 52]}
+search: {grow: 1.5, shrink: 0.75}

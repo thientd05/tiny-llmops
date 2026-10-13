@@ -88,6 +88,12 @@ class Server:
     COMPILE_RE = re.compile(r"\(compilation: ([\d.]+) s\)")
     INIT_RE = re.compile(r"init engine \(profile, create kv cache, warmup model\) took ([\d.]+) s")
     LOADW_RE = re.compile(r"Loading weights took ([\d.]+) seconds")
+    # P08: cấu hình vLLM thật sự chọn (KV FP8 có thể làm vLLM đổi backend attention, library-gaps #3)
+    ATTN_RE = re.compile(r"Using (\S+) attention backend")
+    KVDT_RE = re.compile(r"kv_cache_dtype=([^,\s]+)")
+    MOE_RE = re.compile(r"Using '(\S+)' \S+ MoE backend")
+    MNBT_RE = re.compile(r"'compile_ranges_endpoints': \[(\d+)\]")
+    OFFL_RE = re.compile(r"(?i)(offload\S*[^\n]{0,160})")
 
     def __init__(self, cfg, out):
         self.cfg, self.out = cfg, out
@@ -130,6 +136,17 @@ class Server:
                 info["init_engine_s"] = float(m.group(1))
             if m := self.LOADW_RE.search(text):
                 info["load_weights_s"] = float(m.group(1))
+            if m := self.ATTN_RE.search(text):
+                info["attention_backend"] = m.group(1)
+            if m := self.KVDT_RE.search(text):
+                info["kv_cache_dtype"] = m.group(1)
+            if m := self.MOE_RE.search(text):
+                info["moe_backend"] = m.group(1)
+            if m := self.MNBT_RE.search(text):
+                info["max_num_batched_tokens"] = int(m.group(1))
+            offl = [x.strip() for x in self.OFFL_RE.findall(text) if "kv_offloading" not in x][:3]
+            if offl:
+                info["offload_log"] = offl
         elif reused:  # server còn chạy từ lần chạy trước của sweep → lấy số KV của lần khởi động thật gần nhất
             prev = [json.loads(x) for x in self.starts.read_text().splitlines() if x.strip()] \
                 if self.starts.exists() else []
@@ -140,6 +157,7 @@ class Server:
         with open(self.starts, "a") as f:
             f.write(json.dumps(info, ensure_ascii=False) + "\n")
         log(f"server ready sau {ready_s:.0f} s, KV cache = {info.get('kv_cache_tokens')} token"
+            f" ({info.get('kv_cache_dtype')}, attention {info.get('attention_backend')})"
             + (" (dùng lại server đang chạy)" if reused else ""))
         self.current = info
         # P03: lần khởi động compile torch.compile từ đầu (máy mới) cho KV cache nhỏ hơn ~23% (28,704 vs 37,264 token)
@@ -282,7 +300,10 @@ class Runner:
                 verdicts[n] = lv["verdict"]
             levels[n] = lv
         nsamp = self.cfg["workloads"][w]["samples"]
-        status, need = C.search_step(verdicts, counts, self.cfg["search"], R, C.max_fit(self.cfg, nsamp))
+        s = dict(self.cfg["search"])
+        if self.cfg["workloads"][w].get("warm_start"):  # P08: khởi đầu nóng riêng từng workload
+            s["warm_start"] = self.cfg["workloads"][w]["warm_start"]
+        status, need = C.search_step(verdicts, counts, s, R, C.max_fit(self.cfg, nsamp))
         lo, hi = C.interval(verdicts)
         return {"levels": levels, "verdicts": verdicts, "status": status, "need": need, "lo": lo, "hi": hi}
 
@@ -747,6 +768,11 @@ def prepare_workloads(cfg):
 
 # ---------- --status ----------
 
+# Giây / request của một đơn vị (gồm warmup, reset cache, chờ request dở), trung vị P04 units.csv (P08 việc 9):
+# W1 0.63 [0.58–1.67], W2 1.25 [1.11–1.47], W3 3.19 [3.02–3.51]. Dùng khi cấu hình này chưa có đơn vị nào xong.
+DEFAULT_S_PER_REQ = {"w1": 0.63, "w2": 1.25, "w3": 3.19}
+
+
 def status(runner):
     cfg = runner.cfg
     done = runner.done_units()
@@ -779,15 +805,15 @@ def status(runner):
                     steps = 3
                 future_n = (lo + hi) // 2 if lo and hi else (lo or 8) * 2 if hi is None else 4
                 rest_s += steps * cfg["repeats"] * (overhead + C.num_requests(cfg, future_n)
-                                                    * statistics_median(per_req.get(w), 1.0))
+                                                    * statistics_median(per_req.get(w), DEFAULT_S_PER_REQ.get(w, 1.0)))
                 print(f"  ước lượng thêm ~{steps} mức sau đợt hiện tại")
     for r, w, n, client in todo:
-        rest_s += overhead + C.num_requests(cfg, n) * statistics_median(per_req.get(w), 1.0)
+        rest_s += overhead + C.num_requests(cfg, n) * statistics_median(per_req.get(w), DEFAULT_S_PER_REQ.get(w, 1.0))
     print(f"\nđợt hiện tại còn {len(todo)} đơn vị: " + ", ".join(C.unit_id(w, n, r, c) for r, w, n, c in todo))
     price = cfg.get("price_usd_per_h", 0.2833)
     hours = rest_s / 3600
     print(f"ước tính còn ~{hours:.2f} giờ GPU (≈ ${hours * price:.2f} ≈ {hours * price * 26200:,.0f} VND)"
-          + ("" if per_req else " — chưa có đơn vị nào xong, dùng 1 s/request làm tạm"))
+          + ("" if per_req else " — chưa có đơn vị nào xong, dùng đơn giá P04 (DEFAULT_S_PER_REQ)"))
 
 
 def statistics_median(xs, default):

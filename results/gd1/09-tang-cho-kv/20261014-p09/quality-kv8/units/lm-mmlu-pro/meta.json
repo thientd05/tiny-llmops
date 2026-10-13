@@ -1,0 +1,58 @@
+{
+  "finished": "2026-10-13T20:23:28+00:00",
+  "git_commit": null,
+  "hostname": "6757e4a94101",
+  "items": 14,
+  "machine": "host=506934 machine=116596 instance=55797039",
+  "server": {
+    "attention_backend": "FLASHINFER",
+    "cmd": "bash scripts/serve_default.sh /root/results/p09/quality-kv8/server/start-004.log --max-model-len 16384 --kv-cache-dtype fp8 --gpu-memory-utilization 0.95",
+    "init_engine_s": 48.24,
+    "kv_cache_dtype": "fp8",
+    "kv_cache_gib": 3.72,
+    "kv_cache_tokens": 81328,
+    "load_weights_s": 25.74,
+    "log": "server/start-004.log",
+    "max_concurrency_at": [
+      16384,
+      4.96
+    ],
+    "max_num_batched_tokens": 2048,
+    "moe_backend": "MARLIN",
+    "ready_s": 134.4,
+    "reason": "chưa chạy",
+    "reused_running_server": false,
+    "start_index": 4,
+    "time": "2026-10-13T19:45:51+00:00",
+    "torch_compile_s": 0.5
+  },
+  "spec": {
+    "concurrency": 32,
+    "id": "lm-mmlu-pro",
+    "kind": "lmeval",
+    "lmeval": {
+      "max_gen_toks": 1024,
+      "max_length": 16384,
+      "python": "/root/lmeval-venv/bin/python",
+      "seed": 1234,
+      "version": "lm-eval==0.4.13"
+    },
+    "samples": "data/quality/mmlu_pro_samples.json",
+    "samples_sha256": "705c194f7e1fc27ceb1cd8876c63a03fe3f48df3743910d230345e98a5cca6e5",
+    "sampling": {
+      "temperature": 0
+    },
+    "server_start": "bash scripts/serve_default.sh {log} --max-model-len 16384 --kv-cache-dtype fp8 --gpu-memory-utilization 0.95",
+    "software": {
+      "env": "VLLM_SERVER_DEV_MODE=1",
+      "image": "nvidia/cuda:13.0.2-devel-ubuntu22.04",
+      "model": "Qwen/Qwen3-30B-A3B-GPTQ-Int4@9b534e4318b7ebc3c961a839f13eb18b1833f441",
+      "torch": "2.13.0+cu130",
+      "vllm": "0.30.0"
+    },
+    "tasks": "mmlu_pro"
+  },
+  "spec_sha256": "49d42cdea86fd7875bb5f5566f9a161b8ee8ef30c4dc2c38aa8c3645d4a5e9a3",
+  "unit": "lm-mmlu-pro",
+  "unit_s": 713.8
+}

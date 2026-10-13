@@ -40,6 +40,9 @@ Cần kiểm: `lm_head` (151936×2048, thường không lượng tử) có thể
 - FA2 không hỗ trợ FP8 KV; FA3 chỉ Hopper → Ada dùng FlashInfer hoặc Triton.
 - [Blog FP8 KV của vLLM (4/2026)](https://vllm.ai/blog/2026-04-22-fp8-kvcache) chỉ nói Hopper/Blackwell.
 - [vLLM #60262](https://github.com/vllm-project/vllm/issues/60262): FP8 KV tự chọn FlashInfer rồi crash thay vì fallback Triton → đường này ít được kiểm thử.
+- **Đo thật (P09, 2026-10-14, vLLM 0.30.0, L4):** `--kv-cache-dtype fp8` tự chọn **FLASHINFER**, không crash khi phục vụ; KV 81,328 token ở 0.95.
+  Chỉ chết khi xin `prompt_logprobs` ở 0.95 (hết bộ nhớ, challenges #7). FlashInfer tốn thêm ~0.35 GiB ngoài KV so với FLASH_ATTN.
+  KV FP8 không hiệu chuẩn đổi đáp án nhiều gấp ~2 mức tự nhiên (điểm không đổi). Tốc độ riêng của kernel FlashInfer FP8 chưa tách được (đối chứng hoãn).
 - Hướng: paged decode attention GQA 32q/4kv, head_dim 128, KV FP8, split-K theo sequence.
 
 **#4 Config MoE cho L4**

@@ -1,0 +1,181 @@
+{
+  "config": "bench/configs/tune/p09-anchor.yaml",
+  "goodput": {
+    "w2": {
+      "all": {
+        "TTFT ≤ 10 s": {
+          "hi": null,
+          "levels": [
+            16
+          ],
+          "lo": 16,
+          "monotonic": true
+        },
+        "TTFT ≤ 2 s": {
+          "hi": 16,
+          "levels": [
+            16
+          ],
+          "lo": null,
+          "monotonic": true
+        },
+        "TTFT ≤ 20 s": {
+          "hi": null,
+          "levels": [
+            16
+          ],
+          "lo": 16,
+          "monotonic": true
+        },
+        "TTFT ≤ 5 s": {
+          "hi": 16,
+          "levels": [
+            16
+          ],
+          "lo": null,
+          "monotonic": true
+        },
+        "chính": {
+          "hi": null,
+          "levels": [
+            16
+          ],
+          "lo": 16,
+          "monotonic": true
+        },
+        "phụ": {
+          "hi": 16,
+          "levels": [
+            16
+          ],
+          "lo": null,
+          "monotonic": true
+        }
+      },
+      "steady": {
+        "TTFT ≤ 10 s": {
+          "hi": null,
+          "levels": [
+            16
+          ],
+          "lo": 16,
+          "monotonic": true
+        },
+        "TTFT ≤ 2 s": {
+          "hi": 16,
+          "levels": [
+            16
+          ],
+          "lo": null,
+          "monotonic": true
+        },
+        "TTFT ≤ 20 s": {
+          "hi": null,
+          "levels": [
+            16
+          ],
+          "lo": 16,
+          "monotonic": true
+        },
+        "TTFT ≤ 5 s": {
+          "hi": null,
+          "levels": [
+            16
+          ],
+          "lo": 16,
+          "monotonic": true
+        },
+        "chính": {
+          "hi": null,
+          "levels": [
+            16
+          ],
+          "lo": 16,
+          "monotonic": true
+        },
+        "phụ": {
+          "hi": 16,
+          "levels": [
+            16
+          ],
+          "lo": null,
+          "monotonic": true
+        }
+      }
+    }
+  },
+  "noise": {
+    "w2-c16-vllm": {
+      "all": {
+        "e2el_p50_ms": 13.936182048282376,
+        "output_tok_s": 3.1443116240387243,
+        "tpot_p50_ms": 3.7529797201450714,
+        "tpot_p95_ms": 2.8770322961924895,
+        "ttft_p50_ms": 66.6622500261741,
+        "ttft_p95_ms": 16.304121916525254
+      },
+      "n_repeats": 3,
+      "steady": {
+        "tpot_p95_ms": 1.2320807285015996,
+        "ttft_p95_ms": 64.01221304380232
+      }
+    }
+  },
+  "repeats": 1,
+  "server_starts": [
+    {
+      "attention_backend": "FLASH_ATTN",
+      "cmd": "bash scripts/serve_default.sh /root/results/p09/anchor/server/start-001.log --max-model-len 16384",
+      "init_engine_s": 245.41,
+      "kv_cache_dtype": "auto",
+      "kv_cache_gib": 2.63,
+      "kv_cache_tokens": 28704,
+      "load_weights_s": 44.34,
+      "log": "server/start-001.log",
+      "max_concurrency_at": [
+        16384,
+        1.75
+      ],
+      "max_num_batched_tokens": 2048,
+      "moe_backend": "MARLIN",
+      "ready_s": 371.2,
+      "reason": "chưa chạy",
+      "reused_running_server": false,
+      "start_index": 1,
+      "time": "2026-10-13T19:22:09+00:00",
+      "torch_compile_s": 66.3
+    },
+    {
+      "attention_backend": "FLASH_ATTN",
+      "cmd": "bash scripts/serve_default.sh /root/results/p09/anchor/server/start-002.log --max-model-len 16384",
+      "init_engine_s": 42.05,
+      "kv_cache_dtype": "auto",
+      "kv_cache_gib": 3.41,
+      "kv_cache_tokens": 37264,
+      "load_weights_s": 44.16,
+      "log": "server/start-002.log",
+      "max_concurrency_at": [
+        16384,
+        2.27
+      ],
+      "max_num_batched_tokens": 2048,
+      "moe_backend": "MARLIN",
+      "ready_s": 150.5,
+      "reason": "bỏ lần khởi động compile từ đầu",
+      "reused_running_server": false,
+      "start_index": 2,
+      "time": "2026-10-13T19:24:41+00:00",
+      "torch_compile_s": 1.37
+    }
+  ],
+  "slo": {
+    "tpot_ms": 150,
+    "ttft_ms": 10000
+  },
+  "slo2": {
+    "tpot_ms": 100,
+    "ttft_ms": 2000
+  },
+  "total_unit_hours": 0.1049,
+  "verdict_window": "all"
+}

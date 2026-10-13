@@ -1,0 +1,8 @@
+[21:14:15] đợt mới: 2 đơn vị: w1-c140-r1, w1-c164-r1
+[21:14:15] server start (chưa chạy): bash scripts/serve_default.sh /root/results/p09/p12-wm/server/start-001.log --max-model-len 16384 --kv-cache-dtype fp8 --gpu-memory-utilization 0.95 --watermark 0.02
+[21:16:33] server ready sau 138 s, KV cache = 81328 token (fp8, attention FLASHINFER)
+[21:16:33] w1-c140-r1: N=140, 560 request, seed 1001, client vllm
+[21:19:53] w1-c140-r1: xong sau 195 s — TTFT p95 8319 ms, TPOT p95 115.9 ms, 1076 tok/s ra, lỗi 0 → ĐẠT (cửa sổ all)
+[21:19:53] w1-c164-r1: N=164, 656 request, seed 1001, client vllm
+[21:23:42] w1-c164-r1: xong sau 225 s — TTFT p95 14375 ms, TPOT p95 127.9 ms, 1079 tok/s ra, lỗi 0 → TRƯỢT (cửa sổ all)
+[21:23:42] xong toàn bộ

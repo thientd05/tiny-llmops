@@ -41,6 +41,9 @@
 | Chặn đầu hàng (head-of-line blocking) | Request đứng đầu hàng đợi chưa được nhận (ví dụ chưa đủ KV cho cả prompt) làm mọi request phía sau cũng phải chờ, kể cả request ngắn vừa chỗ trống. vLLM 0.30.0 FCFS làm vậy (P07) |
 | `scheduler_reserve_full_isl` | Cờ vLLM (mặc định bật): chỉ nhận request mới khi **cả prompt** vừa KV còn trống, không chỉ khúc prefill đầu |
 | Watermark (vLLM) | Phần KV để dành, không dùng để nhận request mới, nhằm giảm preemption lặp lại (mặc định 0) |
+| KV FP8 (e4m3) | Lưu key/value của attention bằng số thực 8 bit (4 bit mũ, 3 bit định trị) thay vì 16 bit: nửa bộ nhớ, kém chính xác hơn. Bật bằng `--kv-cache-dtype fp8` (P09) |
+| Hiệu chuẩn scale KV | Đo phạm vi giá trị K/V trên dữ liệu mẫu để chọn hệ số nhân trước khi làm tròn sang FP8. vLLM không hiệu chuẩn thì hệ số = 1.0 |
+| FlashInfer (backend attention) | Bộ kernel attention vLLM tự chọn khi KV FP8 trên GPU Ada (FlashAttention 2 không nhận KV FP8); tốn thêm ~0.35 GiB ngoài KV (P09) |
 | Đẩy KV sang RAM CPU (KV offloading) | Chép KV ra RAM máy chủ khi bị đẩy khỏi GPU; request sau cùng phần đầu thì chép lại qua PCIe thay vì prefill lại. vLLM 0.30.0: `--kv-offloading-size`, backend `native` hoặc `lmcache` |
 
 ## Đo đạc
@@ -73,6 +76,8 @@
 | Bão hoà | Số request chạy cùng lúc đã chạm trần (trên L4 do KV cache: P04 W1 ~60, W2 ~15, W3 ~6); thêm user chỉ làm hàng đợi dài ra, TTFT tăng, throughput đi ngang |
 | Thời gian chờ (queue time) | Thời gian request nằm trong hàng đợi của server trước khi được chạy; vLLM báo qua `vllm:request_queue_time_seconds` |
 | Khởi đầu nóng (warm start) | Sweep rút gọn bắt đầu từ (lo, hi) của cấu hình trước thay vì lưới gốc 8/16/32/64 |
+| Đợt khởi đầu | Giây đầu của bài đo closed-loop: N user gửi câu hỏi cùng lúc, prefill dồn. Khi hàng đợi không còn, đợt này quyết định TTFT p95 (P09: kv8 W2/W3) |
+| Gộp sâu / `include:` | File cấu hình biến thể chỉ ghi phần khác; khoá lồng nhau ghép từng tầng lên file chung, `khoá: null` = bỏ khoá đó (P08) |
 | Throughput | Số token xử lý được mỗi giây (tính riêng token vào và token ra) |
 | Sweep | Một loạt lần đo thay đổi một tham số (ví dụ số user). Với số user, các mức được chọn theo lưới thích nghi, không cố định |
 | Harness | Bộ script tự động chạy đo, lưu kết quả và thông tin môi trường |

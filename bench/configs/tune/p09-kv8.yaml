@@ -1,0 +1,11 @@
+# P09 (N1): KV FP8 + gpu_memory_utilization 0.95. Tìm goodput W1–W3 ×1 (seed 1001), khởi đầu nóng riêng từng workload:
+# mức dưới = mức baseline trượt (P04), mức trên = cận trên ước ở P07 mục 4.1. Plan: docs/gd1-vllm-tune/09-tang-cho-kv/plan.md
+include: base.yaml
+server:
+  start: "bash scripts/serve_default.sh {log} --max-model-len 16384 --kv-cache-dtype fp8 --gpu-memory-utilization 0.95"
+workloads:
+  w1: {path: data/workloads/w1.jsonl, warm_start: [72, 88]}
+  w2: {path: data/workloads/w2.jsonl, warm_start: [20, 26]}
+  w3: {path: data/workloads/w3.jsonl, warm_start: [8, 12]}
+# Khởi đầu nóng đã ở gần goodput dự kiến → mở rộng ×1.5 / ×0.75 thay vì ×2 / ×0.5 (bớt một mức đo khi lệch khỏi khoảng ước; P08)
+search: {grow: 1.5, shrink: 0.75}

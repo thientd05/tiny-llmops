@@ -1,0 +1,1 @@
+{"start_index": 1, "time": "2026-10-13T20:23:29+00:00", "reason": "chưa chạy", "cmd": "bash scripts/serve_default.sh /root/results/p09/kv8/server/start-001.log --max-model-len 16384 --kv-cache-dtype fp8 --gpu-memory-utilization 0.95", "ready_s": 0.1, "reused_running_server": true, "log": null}

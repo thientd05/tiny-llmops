@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 # Thử harness ở local với server giả (không GPU). Dùng `vllm bench serve` 0.30.0 thật (cài bản CPU ở
 # ~/.local/share/vllm-bench-venv, chỉ để gửi tải) → kiểm luôn cờ, định dạng dataset, file kết quả.
-#   bash bench/test_fake.sh OUT_DIR [case...]     case: k100 k5 k40 resume config closed scenario w4 (mặc định: tất cả)
+#   bash bench/test_fake.sh OUT_DIR [case...]     case: k100 k5 k40 resume config closed scenario w4 multi (mặc định: tất cả)
 set -euo pipefail
 cd "$(dirname "$0")/.."
 OUT=${1:?cần OUT_DIR}; shift
-CASES=${*:-k100 k5 k40 resume config closed scenario w4}
+CASES=${*:-k100 k5 k40 resume config closed scenario w4 multi}
 PY=.venv/bin/python
 export TMPDIR=${TMPDIR:-$OUT}
 mkdir -p "$OUT"
@@ -93,6 +93,42 @@ for c in $CASES; do
           "$(python3 -c "import json,sys; print(json.load(open('$u/meta.json'))['dataset'])")" | tail -4
       done
       unset FAKE_CAP
+      ;;
+    multi)
+      # P08: scripts/remote_multi.sh — 2 cấu hình bench (A grid, B search khác cờ server) + 1 cổng chất lượng, nối tiếp.
+      # Lần 1 bị SIGKILL cả nhóm tiến trình giữa chừng (như máy chết); lần 2 cùng lệnh → không đo lại đơn vị đã xong.
+      D=$OUT/multi; rm -rf "$D"; mkdir -p "$D"
+      export FAKE_K=40 MULTI_PY=$PY MULTI_SKIP_SETUP=1 MULTI_SETUP_OUT=$D/setup \
+             MULTI_LMEVAL_VENV=$HOME/.local/share/lmeval-venv
+      printf '%s\n' "# loại cấu hình thư-mục" "bench bench/configs/test-fake-multi-a.yaml $D/a" \
+        "bench bench/configs/test-fake-multi-b.yaml $D/b" "quality quality/configs/test-fake-tune.yaml $D/q" > "$D/list.txt"
+      setsid bash scripts/remote_multi.sh "$D/list.txt" > "$D.1.log" 2>&1 & PG=$!
+      # ngắt khi B đã xong ít nhất 1 đơn vị và đang chạy đơn vị tiếp theo
+      for _ in $(seq 600); do
+        [ "$(ls "$D"/b/units/*/done.json 2>/dev/null | wc -l)" -ge 1 ] && break; sleep 0.5
+      done
+      sleep 3; kill -KILL -- -"$PG" 2>/dev/null || true; bash bench/fake_serve.sh --stop
+      echo "sau lần 1: A $(ls "$D"/a/units/*/done.json 2>/dev/null | wc -l) xong; B $(ls "$D"/b/units/*/done.json 2>/dev/null | wc -l) xong," \
+           "$(ls "$D/b/units" | wc -l) thư mục; Q $(ls "$D"/q/units 2>/dev/null | wc -l) thư mục"
+      stat -c '%Y %n' "$D"/{a,b}/units/*/done.json | sort -k2 > "$D.mtime1"
+      bash scripts/remote_multi.sh "$D/list.txt" > "$D.2.log" 2>&1
+      grep -h "MULTI_STEP \|dở dang\|REMOTE_MULTI_DONE" "$D.2.log"
+      stat -c '%Y %n' "$D"/{a,b}/units/*/done.json | sort -k2 > "$D.mtime2"
+      join -1 2 -2 2 "$D.mtime1" "$D.mtime2" | awk '$2 != $3 {bad=1; print "ĐO LẠI NHẦM:", $1} END {exit bad}'
+      echo "lần 2: các đơn vị đã xong không bị đo lại ✓"
+      bash bench/fake_serve.sh --stop
+      goodput 40 bench/configs/test-fake-multi-b.yaml "$D/b"
+      echo "(B: server giả sức chứa 48 → goodput mong đợi 48)"
+      $PY bench/sweep.py --config bench/configs/test-fake-multi-b.yaml --out "$D/b" --status | tail -2
+      $PY - "$D/b" <<'PYEOF'
+import json, sys
+for x in open(sys.argv[1] + "/server_starts.jsonl"):
+    j = json.loads(x); print("server_starts:", {k: j.get(k) for k in ("reason", "kv_cache_tokens", "attention_backend", "kv_cache_dtype")})
+PYEOF
+      $PY quality/run.py --config quality/configs/test-fake-tune.yaml --out "$D/q" --status
+      $PY quality/analyze.py --gate results/gd1/06-chat-luong-baseline/20261013-p06 \
+        results/gd1/06-chat-luong-baseline/20261013-p06r2 "$D/q" | tail -12
+      unset FAKE_K MULTI_PY MULTI_SKIP_SETUP MULTI_SETUP_OUT MULTI_LMEVAL_VENV
       ;;
   esac
 done

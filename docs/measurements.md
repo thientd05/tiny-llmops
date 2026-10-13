@@ -5,6 +5,110 @@
 
 ---
 
+## 2026-10-14 — P12: preemption W1 trên nền kv8 — `--watermark 0.02` (wm), `--max-num-seqs 133` (seqs)
+
+Cùng phiên, cùng máy với P09 (machine 116596, instance 55797039). Điều kiện chạy: kv8 W1/140 có 173 preemption (≥ 50).
+Lệnh: `bash scripts/remote_multi.sh bench/configs/tune/p12-list.txt`. Kết quả thô: `results/gd1/09-tang-cho-kv/20261014-p09/{p12-wm,p12-seqs}`.
+So cặp: `bench/compare.py <run>/kv8 <run>/p12-{wm,seqs}`. W1, seed 1001, ×1; mức cao 164 = mức kv8 đã đo (trượt) gần nhất ≥ lo + 2 bước (156).
+
+| Cấu hình | KV (token) | N | Kết quả | TTFT p50 / p95 (s) | TPOT p95 (ms) | Token ra/s | Preemption | Chạy p50 / max | Chờ TB (s) | Prefill TB (ms) |
+|---|---|---|---|---|---|---|---|---|---|---|
+| kv8 (cfg1) | 81,328 | 140 | đạt | 2.04 / 8.38 | 124.1 | 1,035 | 173 | 133 / 140 | 2.36 | 442 |
+| wm | 81,328 | 140 | đạt | 2.52 / 8.32 | 115.9 | 1,076 | 10 | 131 / 140 | 2.70 | 453 |
+| seqs | 89,488 | 140 | đạt | 2.38 / 7.96 | 116.6 | 1,077 | 0 | 132 / 133 | 2.50 | 380 |
+| kv8 (cfg1) | 81,328 | 164 | trượt | 8.05 / 15.33 | 131.5 | 1,035 | 272 | 132 / 164 | 7.92 | 466 |
+| wm | 81,328 | 164 | trượt | 9.03 / 14.37 | 127.9 | 1,079 | 38 | 130 / 164 | 8.14 | 454 |
+| seqs | 89,488 | 164 | trượt | 9.08 / 12.82 | 117.0 | 1,082 | 0 | 133 / 133 | 8.43 | 373 |
+
+`--max-num-seqs 133` làm `max_cudagraph_capture_size` 512 → 256, CUDA graph 0.95 + 0.62 → 0.62 + 0.32 GiB, vùng KV 3.72 → **4.10 GiB** (+10% token):
+biến thể seqs đổi cả số request tối đa lẫn dung lượng KV. Server wm sẵn sàng sau 138 s; seqs compile mới 183 s (KV 72,368) → bật lại 114 s (89,488).
+→ Không biến thể nào đạt ở 164 → **không nhận** (quy tắc plan P12). Throughput +4% ở cả 4 đơn vị (nhiễu throughput ~1.2%), TPOT p95 −3 … −11%,
+TTFT p50 +12 … +24%, TTFT p95 −1 … −16% (×1, trong nhiễu ~19%).
+
+---
+
+## 2026-10-14 — P09: KV FP8 + `--gpu-memory-utilization 0.95` (kv8) trên L4 — điểm mốc, cổng chất lượng, goodput W1–W3
+
+Báo cáo: [gd1-vllm-tune/09-tang-cho-kv/bao-cao.md](gd1-vllm-tune/09-tang-cho-kv/bao-cao.md).
+Máy: host 506934 / machine 116596 (Czechia), instance 55797039, $0.3028/h niêm yết; image `nvidia/cuda:13.0.2-devel-ubuntu22.04`, driver 595.84,
+vLLM 0.30.0, torch 2.13.0+cu130, model `Qwen/Qwen3-30B-A3B-GPTQ-Int4@9b534e43`. Thuê 02:11 (2026-10-14, giờ VN). Kết quả thô:
+`results/gd1/09-tang-cho-kv/20261014-p09/{anchor,quality-kv8,kv8}`. Lệnh: `bash scripts/remote_multi.sh bench/configs/tune/p09-list.txt` (máy thuê, tmux).
+
+**Server (`server_starts.jsonl`, đọc từ log vLLM):**
+
+| Cờ thêm vào `--max-model-len 16384` | Lần khởi động | KV (token) | KV dtype | Attention | MoE | `max_num_batched_tokens` |
+|---|---|---|---|---|---|---|
+| (mặc định, 0.92) | compile từ đầu / bật lại | 28,704 / **37,264** | auto (FP16) | FLASH_ATTN | MARLIN | 2048 |
+| `--kv-cache-dtype fp8 --gpu-memory-utilization 0.95` (kv8) | compile từ đầu / bật lại / lần 4 | 64,224 / **81,328** / 81,328 | fp8 | **FLASHINFER** | MARLIN | 2048 |
+| `--kv-cache-dtype fp8 --gpu-memory-utilization 0.92` (chỉ teacher forcing) | 1 | 66,896 | fp8 | FLASHINFER | MARLIN | 2048 |
+
+KV FP8 = 49,152 byte/token (48 lớp × 4 đầu KV × 128 × 2 × 1 byte). Ở 0.92: vùng KV FP8 3.06 GiB so với FP16 3.41 GiB (−0.35 GiB, phần nhớ ngoài KV
+của FlashInfer); 0.95 thêm 14,432 token (0.66 GiB). Lần khởi động compile từ đầu vẫn cho KV ít hơn (−21%, như challenges #4); harness tự bật lại.
+Thời gian sẵn sàng: kv8 compile mới 242 s, bật lại 120–134 s.
+
+**Điểm mốc W2 / 16 user × 3, vLLM mặc định** (`anchor/units.csv`, cửa sổ all; so cặp cùng seed với P04 machine 116596):
+
+| Lần lặp (seed) | TTFT p50 / p95 (s) | TPOT p95 (ms) | Token ra/s | Preemption | P04 TTFT p95 / token ra/s |
+|---|---|---|---|---|---|
+| r1 (1001) | 1.48 / 5.79 | 90.9 | 172.3 | 5 | 6.30 / 171 |
+| r2 (1002) | 1.43 / 4.94 | 93.5 | 168.9 | 7 | 4.87 / 169 |
+| r3 (1003) | 2.42 / 5.88 | 91.6 | 167.0 | 6 | 6.03 / 167 |
+
+→ Cùng máy P04, chênh TTFT p95 −8% / +2% / −2%, throughput +1% / 0% / 0%: so được trực tiếp với baseline P04.
+
+**Cổng chất lượng kv8** (`quality-kv8/gate.md`; `analyze.py --gate` so với P06 lần 1 `20261013-p06` và lần 2 `20261013-p06r2`;
+teacher forcing ở 0.92 vì 0.95 hết bộ nhớ khi tính `prompt_logprobs`, challenges #7):
+
+| Bài | Baseline lần 1 / 2 | kv8 | kv8 − lần 1 (CI 95% paired) | kv8 − lần 2 | Flips so lần 1 / 2 (đúng→sai, sai→đúng) | Flips tự nhiên baseline |
+|---|---|---|---|---|---|---|
+| FinQA-RAG 1% (1,147) | 59.2 / 60.1 | **59.0** | −0.17 (−1.78 … +1.43) | −1.05 | 7.7% (45, 43) / 7.7% (50, 38) | 4.5% (21, 31) |
+| MMLU-Pro (1,000) | 69.0 / 67.4 | **67.8** | −1.20 (−3.38 … +0.98) | +0.40 | 12.4% (68, 56) / 11.0% (53, 57) | 6.6% (41, 25) |
+
+| Độ gần token | kv8 so với baseline | Baseline tự lệch |
+|---|---|---|
+| Sinh tự do 1,000 prompt: giống hệt / vị trí lệch p10, p50, p90 | 5.4% / 1, 19, 67 | 23.1% / 5, 46, 143 (r1 vs r2) |
+| Sinh tự do: Δp p1 / p99, KL TB (đoạn chung) | −0.163 / +0.171, 0.0113 | −0.056 / +0.057, 0.0015 |
+| Teacher forcing 44,976 vị trí: same top-1 | 97.09% | 99.10% (c1 vs c8) |
+| Teacher forcing: Δp TB, p1 / p99; KL TB, p99 | −0.0032, −0.170 / +0.131; 0.0100, 0.134 | +0.0002, −0.047 / +0.049; 0.0014, 0.017 |
+
+Thời gian: teacher forcing 0.8 phút, sinh tham chiếu 17.8, FinQA 7.9, MMLU-Pro 11.9.
+
+**Goodput kv8, W1–W3 ×1 (seed 1001), SLO chính** (`kv8/units.csv`, cửa sổ all):
+
+| w | N | Kết quả | TTFT p50 / p95 (s) | TPOT p95 (ms) | Token ra/s | Preemption | Chạy p50 | KV max | Chờ hàng đợi TB (s) |
+|---|---|---|---|---|---|---|---|---|---|
+| W1 | 72 | đạt | 0.34 / 4.50 | 86.1 | 770 | 0 | 72 | 0.58 | 0.49 |
+| W1 | 88 | đạt | 0.38 / 5.22 | 95.1 | 863 | 0 | 87 | 0.71 | 0.60 |
+| W1 | 132 | đạt | 0.57 / 7.57 | 118.5 | 1,052 | 68 | 130 | 1.00 | 1.32 |
+| **W1** | **140** | **đạt** | 2.04 / 8.38 | 124.1 | 1,035 | 173 | 133 | 1.00 | 2.36 |
+| W1 | 148 | trượt | 4.03 / 10.15 | 127.1 | 1,032 | 245 | 133 | 1.00 | 4.01 |
+| W1 | 164 | trượt | 8.05 / 15.33 | 131.5 | 1,035 | 272 | 132 | 1.00 | 7.92 |
+| W1 | 198 | trượt | 18.81 / 25.23 | 144.3 | 1,036 | 381 | 131 | 1.00 | 16.45 |
+| W2 | 20 | đạt | 1.05 / 6.82 | 95.3 | 208 | 0 | 20 | 0.64 | 0.79 |
+| **W2** | **26** | **đạt** | 1.01 / 9.77 | 115.5 | 224 | 0 | 26 | 0.83 | 1.27 |
+| W2 | 28 | trượt | 1.07 / 10.74 | 121.4 | 230 | 0 | 28 | 0.87 | 1.37 |
+| W2 | 32 | trượt | 1.13 / 11.92 | 131.6 | 237 | 0 | 32 | 0.98 | 1.62 |
+| W2 | 40 | trượt | 4.69 / 14.00 | 140.8 | 242 | 7 | 34 | 1.00 | 4.89 |
+| W3 | 8 | đạt | 1.39 / 3.36 | 65.6 | 127 | 0 | 8 | 0.66 | 0.28 |
+| **W3** | **12** | **đạt** | 1.49 / 7.72 | 87.2 | 140 | 0 | 12 | 0.94 | 0.70 |
+| W3 | 14 | trượt | 2.63 / 10.61 | 96.4 | 144 | 1 | 13 | 1.00 | 1.84 |
+| W3 | 18 | trượt | 9.88 / 17.25 | 99.3 | 145 | 5 | 14 | 1.00 | 8.93 |
+
+→ **Goodput kv8: W1 140 (148 trượt), W2 26 (28), W3 12 (14)**; baseline 68 (72) / 18 (20) / 6 (8). Chi phí tại giá tham chiếu 8,770 VND/h,
+throughput tại goodput: W1 **2,350** VND / 1M token ra (baseline 3,960, −41%), W2 **10,880** (14,460, −25%), W3 **17,400** (24,030, −28%).
+
+So cặp cùng seed với P04 (`bench/compare.py results/gd1/04-.../20261013-p04 results/gd1/09-.../kv8`): W1/72 TTFT p95 11.14 → 4.50 s,
+TPOT p95 104 → 86 ms, token ra/s 612 → 770, preemption 151 → 0, chạy p50 59 → 72; W2/20 11.07 → 6.82 s, 170 → 208 tok/s; W2/32 20.78 → 11.92 s,
+TPOT 92 → 132 ms, 170 → 237 tok/s, chạy p50 15 → 32; W3/8 11.59 → 3.36 s, 102 → 127 tok/s.
+
+Steady (bỏ N request đầu và N cuối) so với all, TTFT p95 (s): kv8 W2/26 9.77 → 1.52, /28 10.74 → 1.73, /32 11.92 → 2.13; W3/12 7.72 → 2.70, /14 10.61 → 5.82;
+W1/140 8.38 → 7.91, /148 10.15 → 11.02. Baseline P04 r1: W2/18 9.68 → 6.90, W2/20 11.07 → 10.50.
+
+**Phiên thuê:** 02:11–04:37 (2.43 h, gồm P12). Tín dụng $15.534 → $14.769 = **$0.765 ≈ 20,040 VND** ($0.315/h ≈ 8,250 VND/h; hoá đơn có thể cộng thêm vài cent).
+Chia theo thời gian: P09 02:11–04:13 (2.03 h ≈ 16.7k VND), P12 04:13–04:37 (0.40 h ≈ 3.3k VND). Kéo kết quả: 308 file khớp sha256 với máy thuê.
+
+---
+
 ## 2026-10-14 — P07: tổng hợp baseline + phân tích thêm trên dữ liệu đã có (local, không GPU)
 
 Báo cáo: [gd1-vllm-baseline/07-tong-hop-baseline/bao-cao.md](gd1-vllm-baseline/07-tong-hop-baseline/bao-cao.md). Máy: laptop, Python 3 hệ thống + numpy.

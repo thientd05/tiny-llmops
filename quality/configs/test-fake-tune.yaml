@@ -1,0 +1,11 @@
+# Thử cổng chất lượng biến thể (tune-kv8.yaml) với server giả: teacher forcing trên văn bản của baseline P06 (source_path),
+# sinh tham chiếu, FinQA, MMLU-Pro (lm-eval giới hạn 2 câu). Số đo vô nghĩa, chỉ kiểm đường chạy + tên đơn vị cho --gate.
+include: test-fake-p06.yaml
+units:
+  - {id: ref-tf-c8-r1, kind: tf, set: reference, source_path: results/gd1/06-chat-luong-baseline/20261013-p06/units/ref-gen-c8-r1,
+     concurrency: 8, prompt_logprobs: 20}
+  - {id: ref-gen-c8-r1, kind: gen, set: reference, concurrency: 8, max_tokens: 256, logprobs: 20}
+  - {id: finqa-c32-r1, kind: gen, set: finqa_rag, concurrency: 32, max_tokens: 768, logprobs: 0}
+  - {id: lm-mmlu-pro, kind: lmeval, tasks: mmlu_pro, concurrency: 32, limit: 2}
+server:
+  start: "bash bench/fake_serve.sh {log} --mode queue --capacity 64 --token-s 0.0002 --chunk-tokens 20 --noise 0.03"

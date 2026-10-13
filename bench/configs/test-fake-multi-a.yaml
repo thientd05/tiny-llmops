@@ -1,0 +1,7 @@
+# Thử scripts/remote_multi.sh ở local (bench/test_fake.sh case multi): cấu hình A = điểm mốc kiểu P09 (chế độ grid, include).
+include: test-fake.yaml
+mode: grid
+points:
+  - {w: w1, n: 16, repeats: 2}
+server:
+  restart: never

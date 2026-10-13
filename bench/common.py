@@ -60,8 +60,30 @@ def count_lines(path):
 
 # ---------- cấu hình ----------
 
+def deep_merge(base, over):
+    """Gộp sâu: khoá của `over` thắng; dict gộp đệ quy, list/giá trị khác thay hẳn; giá trị null = xoá khoá."""
+    out = dict(base)
+    for k, v in over.items():
+        if v is None:            # `khoá: null` ở file con = bỏ khoá đó của file nền
+            out.pop(k, None)
+        else:
+            out[k] = deep_merge(out[k], v) if isinstance(v, dict) and isinstance(out.get(k), dict) else v
+    return out
+
+
+def read_config_tree(path):
+    """Đọc YAML; khoá `include: <file>` (đường dẫn tương đối theo file đang đọc, hoặc theo gốc repo) → gộp file đó làm nền."""
+    path = Path(path)
+    cfg = yaml.safe_load(path.read_text()) or {}
+    inc = cfg.pop("include", None)
+    if inc:
+        p = (path.parent / inc) if (path.parent / inc).exists() else resolve(inc)
+        cfg = deep_merge(read_config_tree(p), cfg)
+    return cfg
+
+
 def load_config(path):
-    cfg = yaml.safe_load(Path(path).read_text())
+    cfg = read_config_tree(path)
     cfg["_path"] = str(path)
     cfg.setdefault("repeats", 1)
     cfg.setdefault("seed_base", 1000)
@@ -76,6 +98,8 @@ def load_config(path):
     s.setdefault("abs_tol", 2)
     s.setdefault("rel_tol", 0.10)
     s.setdefault("warm_start", None)
+    s.setdefault("grow", 2.0)          # hệ số mở rộng lên khi mọi mức đã đo đều đạt (P08: W4 dùng 1.25)
+    s.setdefault("shrink", 0.5)        # hệ số mở rộng xuống khi mọi mức đã đo đều trượt (P08: tune khởi đầu nóng dùng 0.75)
     return cfg
 
 
@@ -283,11 +307,13 @@ def search_step(verdicts, counts, s, repeats, max_fit):
         cap = min(s["max_n"], max_fit)
         if passes_[-1] >= cap:
             return ("above_cap" if cap == s["max_n"] else "sample_cap"), {}
-        nxt = min(passes_[-1] * 2, cap)
+        g = float(s.get("grow", 2.0))
+        nxt = min(max(passes_[-1] + 2, int(round(passes_[-1] * g / 2)) * 2), cap)
     elif not passes_:  # 3. mở rộng xuống
         if fails[0] <= s["min_n"]:
             return "below_min", {}
-        nxt = max(fails[0] // 2, s["min_n"])
+        sh = float(s.get("shrink", 0.5))
+        nxt = max(min(fails[0] - 2, int(round(fails[0] * sh / 2)) * 2), s["min_n"])
     else:  # 4. tìm nhị phân
         lo, hi = passes_[-1], fails[0]
         if hi - lo <= tol(lo, s):

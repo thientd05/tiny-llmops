@@ -166,7 +166,7 @@ class QRunner:
         for u in self.cfg["units"]:
             if self.is_done(u):
                 continue
-            for dep in [u.get("source")] if u.get("source") else []:
+            for dep in [u.get("source")] if u.get("source") and not u.get("source_path") else []:
                 du = next(x for x in self.cfg["units"] if x["id"] == dep)
                 if not self.is_done(du):
                     raise RuntimeError(f"{u['id']} cần {dep} xong trước (xếp {dep} lên trước trong cấu hình)")
@@ -204,14 +204,20 @@ class QRunner:
             _, rows = load_set(self.cfg, u["set"], only_tf=True)
             want = {r["idx"] for r in rows}
             src = []
-            for f in sorted((self.units / u["source"] / "chunks").glob("*.json.gz")):
+            # source_path (P08): văn bản tham chiếu của một lần chạy khác (ví dụ baseline P06) → mọi cấu hình teacher-force
+            # trên CÙNG văn bản, so được với nhau
+            src_dir = C.resolve(u["source_path"]) if u.get("source_path") else self.units / u["source"]
+            files = sorted((src_dir / "chunks").glob("*.json.gz"))
+            if not files:
+                raise RuntimeError(f"{u['id']}: không thấy {src_dir}/chunks/*.json.gz")
+            for f in files:
                 for rec in C.read_json(f):
                     if rec["idx"] in want:
                         src.append(rec)
             # prompt id = đúng chuỗi id server đã tokenize ở đơn vị gen nguồn (return_token_ids)
             missing = [s["idx"] for s in src if not s["prompt_ids"]]
             if missing:
-                raise RuntimeError(f"{u['id']}: thiếu prompt_ids cho {len(missing)} mục của {u['source']}")
+                raise RuntimeError(f"{u['id']}: thiếu prompt_ids cho {len(missing)} mục của {src_dir}")
             items, mk_p, mk_r = sorted(src, key=lambda s: s["idx"]), tf_payload, tf_record
         (d / "chunks").mkdir(exist_ok=True)
         total = 0

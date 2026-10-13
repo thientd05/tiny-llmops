@@ -1,0 +1,159 @@
+downloading uv 0.12.19 x86_64-unknown-linux-gnu
+uv_ready 2s
+vllm_already_installed 4s
+all_done 4s
+16G	/root/models/Qwen3-30B-A3B-GPTQ-Int4
+env -> /root/results/setup-20261013/env.txt
+MULTI_STEP 1 bench bench/configs/tune/p09-anchor.yaml /root/results/p09/anchor 2026-10-13T19:15:58+00:00
+[19:15:58] đợt mới: 3 đơn vị: w2-c16-r1, w2-c16-r2, w2-c16-r3
+[19:15:58] server start (chưa chạy): bash scripts/serve_default.sh /root/results/p09/anchor/server/start-001.log --max-model-len 16384
+[19:22:09] server ready sau 371 s, KV cache = 28704 token (auto, attention FLASH_ATTN)
+[19:22:09] server vừa compile từ đầu (66 s > 10 s) → khởi động lại trước khi đo
+[19:22:09] server stop: bash scripts/stop_server.sh
+server đã tắt (pid 1616)
+[19:22:10] server start (bỏ lần khởi động compile từ đầu): bash scripts/serve_default.sh /root/results/p09/anchor/server/start-002.log --max-model-len 16384
+[19:24:41] server ready sau 151 s, KV cache = 37264 token (auto, attention FLASH_ATTN)
+[19:24:41] w2-c16-r1: N=16, 100 request, seed 1001, client vllm
+[19:26:46] w2-c16-r1: xong sau 123 s — TTFT p95 5789 ms, TPOT p95 90.9 ms, 172 tok/s ra, lỗi 0 → ĐẠT (cửa sổ all)
+[19:26:46] w2-c16-r2: N=16, 100 request, seed 1002, client vllm
+[19:28:48] w2-c16-r2: xong sau 119 s — TTFT p95 4940 ms, TPOT p95 93.5 ms, 169 tok/s ra, lỗi 0 → ĐẠT (cửa sổ all)
+[19:28:48] w2-c16-r3: N=16, 100 request, seed 1003, client vllm
+[19:30:59] w2-c16-r3: xong sau 128 s — TTFT p95 5883 ms, TPOT p95 91.6 ms, 167 tok/s ra, lỗi 0 → ĐẠT (cửa sổ all)
+[19:30:59] xong toàn bộ
+MULTI_STEP_DONE 1 bench bench/configs/tune/p09-anchor.yaml 2026-10-13T19:30:59+00:00
+MULTI_STEP 2 quality quality/configs/tune-kv8.yaml /root/results/p09/quality-kv8 2026-10-13T19:30:59+00:00
+[19:31:14] server start (chưa chạy): bash scripts/serve_default.sh /root/results/p09/quality-kv8/server/start-001.log --max-model-len 16384 --kv-cache-dtype fp8 --gpu-memory-utilization 0.95
+[19:35:16] server ready sau 242 s, KV cache = 64224 token (fp8, attention FLASHINFER)
+[19:35:16] server vừa compile từ đầu (66 s > 10 s) → khởi động lại trước khi đo
+[19:35:16] server stop: bash scripts/stop_server.sh
+server đã tắt (pid 4036)
+[19:35:18] server start (bỏ lần khởi động compile từ đầu): bash scripts/serve_default.sh /root/results/p09/quality-kv8/server/start-002.log --max-model-len 16384 --kv-cache-dtype fp8 --gpu-memory-utilization 0.95
+[19:37:18] server ready sau 120 s, KV cache = 81328 token (fp8, attention FLASHINFER)
+[19:37:18] ref-tf-c8-r1: bắt đầu (tf)
+Traceback (most recent call last):
+  File "/root/td/quality/run.py", line 296, in <module>
+    main()
+  File "/root/td/quality/run.py", line 292, in main
+    runner.run()
+  File "/root/td/quality/run.py", line 173, in run
+    self.run_unit(u)
+  File "/root/td/quality/run.py", line 187, in run_unit
+    n = self.run_http(u, d)
+        ^^^^^^^^^^^^^^^^^^^
+  File "/root/td/quality/run.py", line 231, in run_http
+    recs = asyncio.run(run_chunk(self.cfg, u, part, mk_p, mk_r))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/.local/share/uv/python/cpython-3.12.14-linux-x86_64-gnu/lib/python3.12/asyncio/runners.py", line 195, in run
+    return runner.run(main)
+           ^^^^^^^^^^^^^^^^
+  File "/root/.local/share/uv/python/cpython-3.12.14-linux-x86_64-gnu/lib/python3.12/asyncio/runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/.local/share/uv/python/cpython-3.12.14-linux-x86_64-gnu/lib/python3.12/asyncio/base_events.py", line 691, in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+  File "/root/td/quality/run.py", line 133, in run_chunk
+    return await asyncio.gather(*[one(x) for x in items])
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/td/quality/run.py", line 131, in one
+    out = await post(session, url, make_payload(cfg, u, item))
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/td/quality/run.py", line 80, in post
+    raise RuntimeError(err)
+RuntimeError: ClientConnectorError(ConnectionKey(host='localhost', port=8000, is_ssl=False, ssl=True, proxy=None, proxy_auth=None, proxy_headers_hash=None, server_hostname=None), ConnectionRefusedError(111, "Connect call failed ('127.0.0.1', 8000)"))
+downloading uv 0.12.19 x86_64-unknown-linux-gnu
+uv_ready 4s
+vllm_already_installed 5s
+all_done 5s
+16G	/root/models/Qwen3-30B-A3B-GPTQ-Int4
+env -> /root/results/setup-20261013/env.txt
+MULTI_STEP 1 bench bench/configs/tune/p09-anchor.yaml /root/results/p09/anchor 2026-10-13T19:40:46+00:00
+[19:40:46] xong toàn bộ
+MULTI_STEP_DONE 1 bench bench/configs/tune/p09-anchor.yaml 2026-10-13T19:40:47+00:00
+MULTI_STEP 2 quality quality/configs/tune-kv8-tf.yaml /root/results/p09/quality-kv8 2026-10-13T19:40:47+00:00
+[19:40:48] ref-tf-c8-r1: thư mục cũ khác cấu hình → xoá
+[19:40:48] server start (chưa chạy): bash scripts/serve_default.sh /root/results/p09/quality-kv8/server/start-003.log --max-model-len 16384 --kv-cache-dtype fp8 --gpu-memory-utilization 0.92
+[19:42:45] server ready sau 118 s, KV cache = 66896 token (fp8, attention FLASHINFER)
+[19:42:45] ref-tf-c8-r1: bắt đầu (tf)
+[19:43:12] ref-tf-c8-r1: khúc 1/2 xong sau 23 s
+[19:43:35] ref-tf-c8-r1: khúc 2/2 xong sau 23 s
+[19:43:36] ref-tf-c8-r1: xong 200 mục sau 50 s
+[19:43:36] xong toàn bộ
+MULTI_STEP_DONE 2 quality quality/configs/tune-kv8-tf.yaml 2026-10-13T19:43:36+00:00
+MULTI_STEP 3 quality quality/configs/tune-kv8.yaml /root/results/p09/quality-kv8 2026-10-13T19:43:36+00:00
+[19:43:36] server start (chưa chạy): bash scripts/serve_default.sh /root/results/p09/quality-kv8/server/start-004.log --max-model-len 16384 --kv-cache-dtype fp8 --gpu-memory-utilization 0.95
+[19:45:51] server ready sau 134 s, KV cache = 81328 token (fp8, attention FLASHINFER)
+[19:45:51] ref-gen-c8-r1: bắt đầu (gen)
+[19:47:30] ref-gen-c8-r1: khúc 1/10 xong sau 99 s
+[19:49:03] ref-gen-c8-r1: khúc 2/10 xong sau 94 s
+[19:50:44] ref-gen-c8-r1: khúc 3/10 xong sau 100 s
+[19:52:29] ref-gen-c8-r1: khúc 4/10 xong sau 106 s
+[19:54:10] ref-gen-c8-r1: khúc 5/10 xong sau 100 s
+[19:55:36] ref-gen-c8-r1: khúc 6/10 xong sau 87 s
+[19:57:04] ref-gen-c8-r1: khúc 7/10 xong sau 88 s
+[19:58:31] ref-gen-c8-r1: khúc 8/10 xong sau 87 s
+[19:59:59] ref-gen-c8-r1: khúc 9/10 xong sau 88 s
+[20:03:37] ref-gen-c8-r1: khúc 10/10 xong sau 218 s
+[20:03:37] ref-gen-c8-r1: xong 1000 mục sau 1067 s
+[20:03:37] finqa-c32-r1: bắt đầu (gen)
+[20:04:19] finqa-c32-r1: khúc 1/12 xong sau 42 s
+[20:05:02] finqa-c32-r1: khúc 2/12 xong sau 42 s
+[20:05:43] finqa-c32-r1: khúc 3/12 xong sau 42 s
+[20:06:25] finqa-c32-r1: khúc 4/12 xong sau 42 s
+[20:07:07] finqa-c32-r1: khúc 5/12 xong sau 42 s
+[20:07:50] finqa-c32-r1: khúc 6/12 xong sau 43 s
+[20:08:30] finqa-c32-r1: khúc 7/12 xong sau 41 s
+[20:09:11] finqa-c32-r1: khúc 8/12 xong sau 41 s
+[20:09:52] finqa-c32-r1: khúc 9/12 xong sau 41 s
+[20:10:33] finqa-c32-r1: khúc 10/12 xong sau 41 s
+[20:11:14] finqa-c32-r1: khúc 11/12 xong sau 41 s
+[20:11:34] finqa-c32-r1: khúc 12/12 xong sau 20 s
+[20:11:34] finqa-c32-r1: xong 1147 mục sau 477 s
+[20:11:34] lm-mmlu-pro: bắt đầu (lmeval)
+[20:23:28] lm-mmlu-pro: xong 14 mục sau 714 s
+[20:23:28] xong toàn bộ
+MULTI_STEP_DONE 3 quality quality/configs/tune-kv8.yaml 2026-10-13T20:23:28+00:00
+MULTI_STEP 4 bench bench/configs/tune/p09-kv8.yaml /root/results/p09/kv8 2026-10-13T20:23:28+00:00
+[20:23:29] đợt mới: 6 đơn vị: w1-c72-r1, w1-c88-r1, w2-c20-r1, w2-c26-r1, w3-c8-r1, w3-c12-r1
+[20:23:29] server start (chưa chạy): bash scripts/serve_default.sh /root/results/p09/kv8/server/start-001.log --max-model-len 16384 --kv-cache-dtype fp8 --gpu-memory-utilization 0.95
+[20:23:29] server ready sau 0 s, KV cache = None token (None, attention None) (dùng lại server đang chạy)
+[20:23:29] w1-c72-r1: N=72, 288 request, seed 1001, client vllm
+[20:25:55] w1-c72-r1: xong sau 143 s — TTFT p95 4503 ms, TPOT p95 86.1 ms, 770 tok/s ra, lỗi 0 → ĐẠT (cửa sổ all)
+[20:25:55] w1-c88-r1: N=88, 352 request, seed 1001, client vllm
+[20:28:35] w1-c88-r1: xong sau 156 s — TTFT p95 5220 ms, TPOT p95 95.1 ms, 863 tok/s ra, lỗi 0 → ĐẠT (cửa sổ all)
+[20:28:35] w2-c20-r1: N=20, 100 request, seed 1001, client vllm
+[20:30:21] w2-c20-r1: xong sau 104 s — TTFT p95 6823 ms, TPOT p95 95.3 ms, 208 tok/s ra, lỗi 0 → ĐẠT (cửa sổ all)
+[20:30:21] w2-c26-r1: N=26, 104 request, seed 1001, client vllm
+[20:32:05] w2-c26-r1: xong sau 101 s — TTFT p95 9773 ms, TPOT p95 115.5 ms, 224 tok/s ra, lỗi 0 → ĐẠT (cửa sổ all)
+[20:32:05] w3-c8-r1: N=8, 100 request, seed 1001, client vllm
+[20:36:22] w3-c8-r1: xong sau 255 s — TTFT p95 3360 ms, TPOT p95 65.6 ms, 127 tok/s ra, lỗi 0 → ĐẠT (cửa sổ all)
+[20:36:22] w3-c12-r1: N=12, 100 request, seed 1001, client vllm
+[20:40:19] w3-c12-r1: xong sau 234 s — TTFT p95 7719 ms, TPOT p95 87.2 ms, 140 tok/s ra, lỗi 0 → ĐẠT (cửa sổ all)
+[20:40:19] đợt mới: 3 đơn vị: w1-c132-r1, w2-c40-r1, w3-c18-r1
+[20:40:19] w1-c132-r1: N=132, 528 request, seed 1001, client vllm
+[20:43:31] w1-c132-r1: xong sau 188 s — TTFT p95 7567 ms, TPOT p95 118.5 ms, 1052 tok/s ra, lỗi 0 → ĐẠT (cửa sổ all)
+[20:43:31] w2-c40-r1: N=40, 160 request, seed 1001, client vllm
+[20:45:50] w2-c40-r1: xong sau 136 s — TTFT p95 13997 ms, TPOT p95 140.8 ms, 242 tok/s ra, lỗi 0 → TRƯỢT (cửa sổ all)
+[20:45:50] w3-c18-r1: N=18, 100 request, seed 1001, client vllm
+[20:49:40] w3-c18-r1: xong sau 227 s — TTFT p95 17251 ms, TPOT p95 99.3 ms, 145 tok/s ra, lỗi 0 → TRƯỢT (cửa sổ all)
+[20:49:40] đợt mới: 3 đơn vị: w1-c198-r1, w2-c32-r1, w3-c14-r1
+[20:49:40] w1-c198-r1: N=198, 792 request, seed 1001, client vllm
+[20:54:23] w1-c198-r1: xong sau 278 s — TTFT p95 25225 ms, TPOT p95 144.3 ms, 1036 tok/s ra, lỗi 0 → TRƯỢT (cửa sổ all)
+[20:54:23] w2-c32-r1: N=32, 128 request, seed 1001, client vllm
+[20:56:22] w2-c32-r1: xong sau 116 s — TTFT p95 11917 ms, TPOT p95 131.6 ms, 237 tok/s ra, lỗi 0 → TRƯỢT (cửa sổ all)
+[20:56:22] w3-c14-r1: N=14, 100 request, seed 1001, client vllm
+[21:00:11] w3-c14-r1: xong sau 227 s — TTFT p95 10612 ms, TPOT p95 96.4 ms, 144 tok/s ra, lỗi 0 → TRƯỢT (cửa sổ all)
+[21:00:11] đợt mới: 2 đơn vị: w1-c164-r1, w2-c28-r1
+[21:00:11] w1-c164-r1: N=164, 656 request, seed 1001, client vllm
+[21:04:09] w1-c164-r1: xong sau 233 s — TTFT p95 15333 ms, TPOT p95 131.5 ms, 1035 tok/s ra, lỗi 0 → TRƯỢT (cửa sổ all)
+[21:04:09] w2-c28-r1: N=28, 112 request, seed 1001, client vllm
+[21:05:55] w2-c28-r1: xong sau 104 s — TTFT p95 10739 ms, TPOT p95 121.4 ms, 230 tok/s ra, lỗi 0 → TRƯỢT (cửa sổ all)
+[21:05:55] đợt mới: 1 đơn vị: w1-c148-r1
+[21:05:55] w1-c148-r1: N=148, 592 request, seed 1001, client vllm
+[21:09:34] w1-c148-r1: xong sau 214 s — TTFT p95 10147 ms, TPOT p95 127.1 ms, 1032 tok/s ra, lỗi 0 → TRƯỢT (cửa sổ all)
+[21:09:34] đợt mới: 1 đơn vị: w1-c140-r1
+[21:09:34] w1-c140-r1: N=140, 560 request, seed 1001, client vllm
+[21:12:59] w1-c140-r1: xong sau 201 s — TTFT p95 8378 ms, TPOT p95 124.1 ms, 1035 tok/s ra, lỗi 0 → ĐẠT (cửa sổ all)
+[21:12:59] xong toàn bộ
+MULTI_STEP_DONE 4 bench bench/configs/tune/p09-kv8.yaml 2026-10-13T21:13:02+00:00
+REMOTE_MULTI_DONE 2026-10-13T21:13:02+00:00

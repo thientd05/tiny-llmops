@@ -259,6 +259,80 @@ def paired(a, b):
             "flips_pct": float(np.mean([a[k] != b[k] for k in keys])) if n else math.nan}
 
 
+# ---------- cổng chất lượng (P08) ----------
+
+def gate(b1, b2, v):
+    """Biến thể V so với baseline lần 1 (B1, đơn vị gốc) và lần 2 (B2, đơn vị -r2). Dấu hiệu 'kém đi' (plan P09, đặt trước):
+    (a) điểm V thấp hơn lần baseline thấp hơn quá 1.96 × paired SE; (b) flips V so với baseline > 1.5 × flips tự nhiên (B1 vs B2);
+    (c) Δp lệch âm: p1 < −0.08 và |p1| > 1.5 × p99 (llama.cpp, references E5). Có dấu hiệu → chạy lại cổng một lần trước khi kết luận."""
+    out, flags = {"base_r1": str(b1), "base_r2": str(b2), "variant": str(v)}, []
+    # độ gần token: V so với tham chiếu B1; mức tự lệch của baseline để đối chiếu
+    for name, ub, uv, self_pair in (("gen", "ref-gen-c8-r1", "ref-gen-c8-r1", ("ref-gen-c8-r1", "ref-gen-c8-r2")),
+                                    ("tf", "ref-tf-c8-r1", "ref-tf-c8-r1", ("ref-tf-c1-r1", "ref-tf-c8-r1"))):
+        A, B = unit_recs(b1, ub), unit_recs(v, uv)
+        fn = gen_closeness if name == "gen" else tf_closeness
+        if A and B:
+            out[name] = fn(A, B)
+            S1, S2 = unit_recs(b1, self_pair[0]), unit_recs(b1, self_pair[1])
+            if S1 and S2:
+                out[name + "_baseline_self"] = fn(S1, S2)
+            dp = out[name].get("dp", {})
+            if dp and dp.get("p1", 0) < -0.08 and abs(dp["p1"]) > 1.5 * abs(dp.get("p99", 0)):
+                flags.append(f"{name}: Δp lệch âm (p1 {dp['p1']:+.3f}, p99 {dp.get('p99', 0):+.3f})")
+    # điểm tác vụ
+    tasks = [("finqa", ("finqa-c32-r1", "finqa-c32-r2", "finqa-c32-r1")),
+             ("mmlu_pro", ("lm-mmlu-pro", "lm-mmlu-pro-r2", "lm-mmlu-pro"))]
+    for task, (u1, u2, uv) in tasks:
+        if task == "finqa":
+            k = f"ok@{MAIN_TOL:g}"
+            get = lambda run, uid: ({q: float(x[k]) for q, x in r[1].items()} if (r := score_finqa(run, uid)) else None)
+        else:
+            mk = LM_METRIC[task][0][0]
+            get = lambda run, uid: (r["per_doc"][mk] if (r := lm_results(run, uid, task)) else None)
+        x1, x2, xv = get(b1, u1), get(b2, u2), get(v, uv)
+        if not (x1 and x2 and xv):
+            continue
+        acc = {nm: float(np.mean(list(x.values()))) for nm, x in (("base_r1", x1), ("base_r2", x2), ("variant", xv))}
+        p_self, p1, p2 = paired(x1, x2), paired(x1, xv), paired(x2, xv)
+        lower = min(("base_r1", p1), ("base_r2", p2), key=lambda t: acc[t[0]])
+        out[task] = {"acc": acc, "self_b2_minus_b1": p_self, "v_minus_b1": p1, "v_minus_b2": p2}
+        pv = lower[1]
+        if pv["diff"] < -1.96 * pv["se_paired"]:
+            flags.append(f"{task}: thấp hơn lần baseline thấp hơn ({lower[0]}) {pv['diff'] * 100:+.2f} điểm, "
+                         f"ngoài ±{1.96 * pv['se_paired'] * 100:.2f}")
+        nat = p_self["flips_pct"]
+        worst = max(p1["flips_pct"], p2["flips_pct"])
+        if worst > 1.5 * nat:
+            flags.append(f"{task}: flips {worst * 100:.1f}% > 1.5 × flips tự nhiên {nat * 100:.1f}%")
+    out["flags"] = flags
+    out["verdict"] = "dấu hiệu kém đi → chạy lại cổng một lần" if flags else "đạt (trong mức dao động của baseline)"
+    C.write_json(Path(v) / "gate.json", out)
+    md = [f"# Cổng chất lượng: {v}", "", f"So với baseline lần 1 `{b1}` và lần 2 `{b2}`.", ""]
+    for task in ("finqa", "mmlu_pro"):
+        if task in out:
+            t = out[task]
+            md.append(f"- **{task}**: baseline {t['acc']['base_r1'] * 100:.1f} / {t['acc']['base_r2'] * 100:.1f}, biến thể "
+                      f"{t['acc']['variant'] * 100:.1f}; hiệu so lần 1 {t['v_minus_b1']['diff'] * 100:+.2f} "
+                      f"(CI {t['v_minus_b1']['ci95'][0] * 100:+.2f} … {t['v_minus_b1']['ci95'][1] * 100:+.2f}), so lần 2 "
+                      f"{t['v_minus_b2']['diff'] * 100:+.2f}; flips {t['v_minus_b1']['flips_pct'] * 100:.1f}% / "
+                      f"{t['v_minus_b2']['flips_pct'] * 100:.1f}% (tự nhiên {t['self_b2_minus_b1']['flips_pct'] * 100:.1f}%)")
+    for name in ("gen", "tf"):
+        if name in out:
+            g, sref = out[name], out.get(name + "_baseline_self", {})
+            if name == "gen":
+                md.append(f"- **sinh tự do**: giống hệt {g['exact_match'] * 100:.1f}% (baseline tự lệch "
+                          f"{sref.get('exact_match', math.nan) * 100:.1f}%), vị trí lệch p50 {g['divergence_pos'].get('p50')} "
+                          f"(baseline {sref.get('divergence_pos', {}).get('p50')}); Δp p1/p99 {g['dp'].get('p1', math.nan):+.3f} / "
+                          f"{g['dp'].get('p99', math.nan):+.3f}; KL TB {g['kl']['mean']:.4f} (baseline {sref.get('kl', {}).get('mean', math.nan):.4f})")
+            else:
+                md.append(f"- **teacher forcing**: same top-1 {g['same_top1'] * 100:.2f}% (baseline c1 vs c8 "
+                          f"{sref.get('same_top1', math.nan) * 100:.2f}%); Δp p1/p99 {g['dp'].get('p1', math.nan):+.3f} / "
+                          f"{g['dp'].get('p99', math.nan):+.3f}; KL TB {g['kl']['mean']:.4f}")
+    md += ["", f"**Kết luận:** {out['verdict']}"] + [f"- {x}" for x in flags]
+    C.atomic_write(Path(v) / "gate.md", "\n".join(md) + "\n")
+    return "\n".join(md)
+
+
 # ---------- báo cáo ----------
 
 def f(x, nd=4):
@@ -348,7 +422,12 @@ def main():
     ap.add_argument("--compare", nargs=2, metavar=("BASELINE", "VARIANT"))
     ap.add_argument("--self-flips", nargs=2, metavar=("RUN1", "RUN2"),
                     help="flips tự nhiên: các bài chấm điểm của RUN1 (đơn vị gốc) vs RUN2 (đơn vị -r2), cùng cấu hình")
+    ap.add_argument("--gate", nargs=3, metavar=("BASE_R1", "BASE_R2", "VARIANT"),
+                    help="cổng chất lượng (P08/P09): biến thể so với CẢ HAI lần chạy baseline P06, quy tắc 'kém đi' đặt trước")
     a = ap.parse_args()
+    if a.gate:
+        print(gate(*a.gate))
+        return
     if a.self_flips:
         r1, r2 = a.self_flips
         out = {}

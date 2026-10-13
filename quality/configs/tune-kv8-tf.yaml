@@ -1,0 +1,10 @@
+# P09 — cổng chất lượng kv8, riêng đơn vị teacher forcing. Cùng KV FP8 (cùng phép tính attention) nhưng --gpu-memory-utilization 0.92
+# thay vì 0.95: tính prompt_logprobs cần logits 151,936 từ cho mọi vị trí prompt (chia khúc, ~300 MiB mỗi khúc), phần này KHÔNG được
+# vLLM dự trù lúc đo bộ nhớ khởi động; ở 0.95 chỉ còn 151 MiB trống → CUDA OOM (2026-10-14, challenges #7). Dung lượng vùng KV
+# không đổi phép tính, nên kết quả teacher forcing ở 0.92 đại diện cho kv8. Ghi chung thư mục kết quả với tune-kv8.yaml.
+include: tune-kv8.yaml
+units:
+  - {id: ref-tf-c8-r1, kind: tf, set: reference, source_path: results/gd1/06-chat-luong-baseline/20261013-p06/units/ref-gen-c8-r1,
+     concurrency: 8, prompt_logprobs: 20}
+server:
+  start: "bash scripts/serve_default.sh {log} --max-model-len 16384 --kv-cache-dtype fp8 --gpu-memory-utilization 0.92"

@@ -5,6 +5,24 @@
 
 ---
 
+## #7 — KV FP8 + `--gpu-memory-utilization 0.95`: vLLM hết bộ nhớ khi tính xác suất từng vị trí prompt (teacher forcing) (2026-10-14, P09)
+
+**Bối cảnh.** Cổng chất lượng của cấu hình kv8 (KV FP8 + dành 95% bộ nhớ GPU cho vLLM) bắt đầu bằng teacher forcing: gửi prompt + văn bản
+tham chiếu, xin `prompt_logprobs: 20` (xác suất top-20 ở mọi vị trí).
+**Triệu chứng.** Server khởi động bình thường (KV 81,328 token, backend FLASHINFER), nhưng 4 giây sau khi bắt đầu gửi, vLLM chết:
+`torch.OutOfMemoryError: CUDA out of memory. Tried to allocate 298.00 MiB ... 151.06 MiB is free`, tại
+`prompt_logprob.py compute_prompt_logprobs_with_chunking → lm_head`.
+**Nguyên nhân.** Tính `prompt_logprobs` cần ma trận logits 151,936 từ cho từng token prompt (vLLM chia khúc, ~300 MiB mỗi khúc). Lúc khởi động
+vLLM đo bộ nhớ cao nhất bằng một lượt chạy thử, nhưng lượt đó chỉ tính logits cho token cuối của mỗi request, không có `prompt_logprobs`.
+Ở 0.92 còn dư ~0.66 GiB nên P06 chạy được; ở 0.95 phần dư đó đã chia hết cho KV.
+**Phương án.** (a) Chạy riêng đơn vị teacher forcing ở 0.92, giữ KV FP8: phép tính attention không đổi (dung lượng vùng KV không đổi số học);
+(b) hạ cả cấu hình kv8 xuống 0.94 / 0.92: mất một phần KV cho mọi workload chỉ vì bài đo chất lượng; (c) teacher forcing concurrency 1: vẫn cần ~300 MiB / khúc, không chắc đủ.
+**Quyết định.** (a): `quality/configs/tune-kv8-tf.yaml`. Phục vụ thường (không `prompt_logprobs`) ở 0.95 được kiểm bằng chính lần tìm goodput W1–W3
+ở mức tải cao. Ghi chú cho GĐ5: dịch vụ thật cho phép người dùng xin `prompt_logprobs` thì 0.95 có thể làm sập server.
+**Chi phí.** Một lần khởi động server thêm (~2–6 phút GPU ≈ 1k VND).
+
+---
+
 ## #6 — Kịch bản W4 bỏ sót lượt của người dùng quay lại hội thoại ở ngày khác (2026-10-13, P05 chuẩn bị)
 
 **Bối cảnh.** P05 cần kịch bản cho k bất kỳ (tìm nhị phân). Cách chọn: sinh một kịch bản gốc k=110, kịch bản k = lọc theo k ngày đầu

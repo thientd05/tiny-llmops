@@ -1,0 +1,16 @@
+[19:15:58] đợt mới: 3 đơn vị: w2-c16-r1, w2-c16-r2, w2-c16-r3
+[19:15:58] server start (chưa chạy): bash scripts/serve_default.sh /root/results/p09/anchor/server/start-001.log --max-model-len 16384
+[19:22:09] server ready sau 371 s, KV cache = 28704 token (auto, attention FLASH_ATTN)
+[19:22:09] server vừa compile từ đầu (66 s > 10 s) → khởi động lại trước khi đo
+[19:22:09] server stop: bash scripts/stop_server.sh
+server đã tắt (pid 1616)
+[19:22:10] server start (bỏ lần khởi động compile từ đầu): bash scripts/serve_default.sh /root/results/p09/anchor/server/start-002.log --max-model-len 16384
+[19:24:41] server ready sau 151 s, KV cache = 37264 token (auto, attention FLASH_ATTN)
+[19:24:41] w2-c16-r1: N=16, 100 request, seed 1001, client vllm
+[19:26:46] w2-c16-r1: xong sau 123 s — TTFT p95 5789 ms, TPOT p95 90.9 ms, 172 tok/s ra, lỗi 0 → ĐẠT (cửa sổ all)
+[19:26:46] w2-c16-r2: N=16, 100 request, seed 1002, client vllm
+[19:28:48] w2-c16-r2: xong sau 119 s — TTFT p95 4940 ms, TPOT p95 93.5 ms, 169 tok/s ra, lỗi 0 → ĐẠT (cửa sổ all)
+[19:28:48] w2-c16-r3: N=16, 100 request, seed 1003, client vllm
+[19:30:59] w2-c16-r3: xong sau 128 s — TTFT p95 5883 ms, TPOT p95 91.6 ms, 167 tok/s ra, lỗi 0 → ĐẠT (cửa sổ all)
+[19:30:59] xong toàn bộ
+[19:40:46] xong toàn bộ

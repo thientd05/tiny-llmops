@@ -1,0 +1,155 @@
+{
+  "config": "bench/configs/tune/p12-wm.yaml",
+  "goodput": {
+    "w1": {
+      "all": {
+        "TTFT ≤ 10 s": {
+          "hi": 164,
+          "levels": [
+            140,
+            164
+          ],
+          "lo": 140,
+          "monotonic": true
+        },
+        "TTFT ≤ 2 s": {
+          "hi": 140,
+          "levels": [
+            140,
+            164
+          ],
+          "lo": null,
+          "monotonic": true
+        },
+        "TTFT ≤ 20 s": {
+          "hi": null,
+          "levels": [
+            140,
+            164
+          ],
+          "lo": 164,
+          "monotonic": true
+        },
+        "TTFT ≤ 5 s": {
+          "hi": 140,
+          "levels": [
+            140,
+            164
+          ],
+          "lo": null,
+          "monotonic": true
+        },
+        "chính": {
+          "hi": 164,
+          "levels": [
+            140,
+            164
+          ],
+          "lo": 140,
+          "monotonic": true
+        },
+        "phụ": {
+          "hi": 140,
+          "levels": [
+            140,
+            164
+          ],
+          "lo": null,
+          "monotonic": true
+        }
+      },
+      "steady": {
+        "TTFT ≤ 10 s": {
+          "hi": 164,
+          "levels": [
+            140,
+            164
+          ],
+          "lo": 140,
+          "monotonic": true
+        },
+        "TTFT ≤ 2 s": {
+          "hi": 140,
+          "levels": [
+            140,
+            164
+          ],
+          "lo": null,
+          "monotonic": true
+        },
+        "TTFT ≤ 20 s": {
+          "hi": null,
+          "levels": [
+            140,
+            164
+          ],
+          "lo": 164,
+          "monotonic": true
+        },
+        "TTFT ≤ 5 s": {
+          "hi": 140,
+          "levels": [
+            140,
+            164
+          ],
+          "lo": null,
+          "monotonic": true
+        },
+        "chính": {
+          "hi": 164,
+          "levels": [
+            140,
+            164
+          ],
+          "lo": 140,
+          "monotonic": true
+        },
+        "phụ": {
+          "hi": 140,
+          "levels": [
+            140,
+            164
+          ],
+          "lo": null,
+          "monotonic": true
+        }
+      }
+    }
+  },
+  "noise": {},
+  "repeats": 1,
+  "server_starts": [
+    {
+      "attention_backend": "FLASHINFER",
+      "cmd": "bash scripts/serve_default.sh /root/results/p09/p12-wm/server/start-001.log --max-model-len 16384 --kv-cache-dtype fp8 --gpu-memory-utilization 0.95 --watermark 0.02",
+      "init_engine_s": 39.73,
+      "kv_cache_dtype": "fp8",
+      "kv_cache_gib": 3.72,
+      "kv_cache_tokens": 81328,
+      "load_weights_s": 37.45,
+      "log": "server/start-001.log",
+      "max_concurrency_at": [
+        16384,
+        4.96
+      ],
+      "max_num_batched_tokens": 2048,
+      "moe_backend": "MARLIN",
+      "ready_s": 138.1,
+      "reason": "chưa chạy",
+      "reused_running_server": false,
+      "start_index": 1,
+      "time": "2026-10-13T21:16:33+00:00",
+      "torch_compile_s": 0.44
+    }
+  ],
+  "slo": {
+    "tpot_ms": 150,
+    "ttft_ms": 10000
+  },
+  "slo2": {
+    "tpot_ms": 100,
+    "ttft_ms": 2000
+  },
+  "total_unit_hours": 0.11915555555555557,
+  "verdict_window": "all"
+}

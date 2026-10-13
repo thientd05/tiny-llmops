@@ -1,0 +1,8 @@
+# P09 bước 1: điểm mốc W2 / 16 user × 3 lần với vLLM mặc định (so máy này với máy P04, thi-nghiem-chay-tiep.md nguyên tắc 9).
+include: base.yaml
+mode: grid
+points:
+  - {w: w2, n: 16, repeats: 3}
+workloads:
+  w1: null
+  w3: null

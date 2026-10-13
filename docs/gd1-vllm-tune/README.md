@@ -16,21 +16,24 @@
 - **Mỗi cờ đo bằng loại tải nơi nó có tác dụng:** KV và preemption bằng W1–W3; hàng đợi và lịch sử hội thoại bằng W4.
 - **Cùng seed với baseline** (W1–W3: 1001–1003; W4: peak seed 1, seed 2 chỉ ở P13) để so được từng cặp.
 - **Cổng chất lượng ×1** chỉ cho cấu hình đổi cách tính số (KV FP8) và cho cấu hình cuối. Lần chạy thứ hai chỉ khi lần đầu có dấu hiệu kém đi.
+  **Sửa 2026-10-14 (P09):** "kém đi" = điểm thấp hơn lần baseline thấp hơn quá 1.96 × SE paired, hoặc Δp lệch hẳn về âm. Flips > 1.5 × tự nhiên
+  là **"khác biệt, phải báo"** (kèm số câu đổi hai chiều), không tự loại cấu hình. Lý do: kv8 có flips gấp ~2 nhưng hai chiều cân bằng và điểm không đổi;
+  chạy lại cổng không phân biệt được "khác" với "kém" ([P09 bao-cao](09-tang-cho-kv/bao-cao.md) mục 4.3). Chấp nhận cấu hình "khác" là quyết định của người dùng.
 - **Thay đổi phía ứng dụng** (client gán độ ưu tiên, sửa template) báo thành nhóm riêng "vLLM đã tune + chỉnh ứng dụng".
 - Chi phí tính theo giá chung **8,770 VND/h** (P07 mục 3.5).
 - Đây là mặc định, không phải luật cứng: kết quả giữa chừng cho thấy cách khác tốt hơn thì đổi, kèm một câu lý do trong báo cáo.
 
 ## Danh sách plan
 
-| # | Plan | Nghi vấn (P07) | GPU | Giờ GPU ước | VND ước | Phiên |
-|---|---|---|---|---|---|---|
-| P08 | [Chuẩn bị harness cho tune](08-chuan-bi-harness-tune/plan.md) | — | Không | 0 | 0 | local |
-| P09 | [Tăng chỗ KV: KV FP8 + thêm bộ nhớ](09-tang-cho-kv/plan.md) | N1 | Có | **2.3** (2.1–4.1) | ~20k | 1 |
-| P10 | [Câu dài chặn câu ngắn ở hàng đợi (W4)](10-hang-doi-w4/plan.md) | N3 | Có | **6.0** (4.6–8.3) | ~53k | 2 |
-| P11 | [Giữ lịch sử hội thoại ở RAM CPU (W4)](11-kv-ram-cpu/plan.md) | N2 | Có | **0.9** (0.7–1.7) | ~8k | 2 (nối sau P10) |
-| P12 | [Preemption W1 (có điều kiện)](12-preemption-w1/plan.md) | N4 | Có | **0.55** hoặc 0 | ~5k | 1 (nối sau P09) |
-| P13 | [Đo đầy đủ cấu hình tune cuối](13-do-cau-hinh-cuoi/plan.md) | — | Có | **5.0** (4.6–8.4) | ~44k | 3 |
-| P14 | [Tổng hợp GĐ1 tune, chuẩn bị GĐ2](14-tong-hop-tune/plan.md) | — | Không | 0 | 0 | local |
+| # | Plan | Nghi vấn (P07) | GPU | Giờ GPU ước | VND ước | Phiên | Trạng thái |
+|---|---|---|---|---|---|---|---|
+| P08 | [Chuẩn bị harness cho tune](08-chuan-bi-harness-tune/plan.md) | — | Không | 0 | 0 | local | **Xong** 2026-10-14 ([báo cáo](08-chuan-bi-harness-tune/bao-cao.md)); việc 2, 6, 7 và phần W4 của việc 4 để trước P10 |
+| P09 | [Tăng chỗ KV: KV FP8 + thêm bộ nhớ](09-tang-cho-kv/plan.md) | N1 | Có | **2.3** (2.1–4.1) | ~20k | 1 | **Xong** 2026-10-14: thật 2.03 h ([báo cáo](09-tang-cho-kv/bao-cao.md)). kv8 W1/W2/W3 = 140/26/12; cfg1 = kv8 **tạm**, chờ người dùng quyết chất lượng |
+| P10 | [Câu dài chặn câu ngắn ở hàng đợi (W4)](10-hang-doi-w4/plan.md) | N3 | Có | **6.0** (4.6–8.3) | ~53k | 2 | Chưa |
+| P11 | [Giữ lịch sử hội thoại ở RAM CPU (W4)](11-kv-ram-cpu/plan.md) | N2 | Có | **0.9** (0.7–1.7) | ~8k | 2 (nối sau P10) | Chưa |
+| P12 | [Preemption W1 (có điều kiện)](12-preemption-w1/plan.md) | N4 | Có | **0.55** hoặc 0 | ~5k | 1 (nối sau P09) | **Xong** 2026-10-14: thật 0.40 h ([báo cáo](12-preemption-w1/bao-cao.md)); không nhận cờ nào |
+| P13 | [Đo đầy đủ cấu hình tune cuối](13-do-cau-hinh-cuoi/plan.md) | — | Có | **5.0** (4.6–8.4) | ~44k | 3 | Chưa |
+| P14 | [Tổng hợp GĐ1 tune, chuẩn bị GĐ2](14-tong-hop-tune/plan.md) | — | Không | 0 | 0 | local | Chưa |
 | | **Tổng** | | | **~14.8 h** (12.0–23.1) | **~130k** (105–203k) | 3 phiên |
 
 N5 (giữ khối `<think>` rỗng) **hoãn**: cần bài đo chất lượng hội thoại nhiều lượt chưa có (P07 mục 4.5).
@@ -84,6 +87,12 @@ khi cần (xem P13).
 | Đường cong 8/16/32/64 và khung giờ 10h/13h cho cấu hình tune | GĐ5 (hình so sánh, chi phí cả ngày chi tiết) | ~3–4 h |
 | N5 giữ khối `<think>` rỗng | Khi có bài đo chất lượng nhiều lượt | chưa ước |
 | LMCache làm backend RAM CPU | GĐ2 (sàng lọc thư viện bổ trợ) | ~1 h |
+| kv16 (KV FP16 + 0.95), phương án thay kv8 | Chỉ khi người dùng không chấp nhận "khác nhưng không kém" của kv8 (P09 mục 6); đo ở đầu phiên P10 | ~0.9 h |
+| Cổng chất lượng kv8 lần 2 | Không cần theo quy tắc đã sửa (P09 mục 4.3); làm nếu muốn kiểm "lặp lại" cho hội đồng | 0.78 h |
+| Hiệu chuẩn scale KV FP8 (llm-compressor, references F2) | Nếu muốn giảm flips của kv8; cần tìm hiểu trước | chưa ước |
+| Cách mở đầu bài đo W1–W3 (N user gửi cùng một giây) hoặc báo thêm cửa sổ "steady" | Trước P13: với kv8, W2/W3 trượt chỉ vì đợt khởi đầu (P09 mục 4.4); tính lại từ dữ liệu sẵn có | 0 (phân tích) |
+| `--max-num-seqs` / cỡ CUDA graph nhỏ hơn → +10% KV | P13 (ứng viên, P12 mục 4.6) | trong P13 |
+| N6: W2 bị giới hạn bởi prefill chen decode → `--max-num-batched-tokens` | P13 hoặc GĐ2, tuỳ kết quả W4 | ~0.5 h |
 
 ## Quy ước thư mục
 

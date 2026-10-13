@@ -1,0 +1,490 @@
+{
+  "config": "bench/configs/tune/p09-kv8.yaml",
+  "goodput": {
+    "w1": {
+      "all": {
+        "TTFT ≤ 10 s": {
+          "hi": 148,
+          "levels": [
+            72,
+            88,
+            132,
+            140,
+            148,
+            164,
+            198
+          ],
+          "lo": 140,
+          "monotonic": true
+        },
+        "TTFT ≤ 2 s": {
+          "hi": 72,
+          "levels": [
+            72,
+            88,
+            132,
+            140,
+            148,
+            164,
+            198
+          ],
+          "lo": null,
+          "monotonic": true
+        },
+        "TTFT ≤ 20 s": {
+          "hi": 198,
+          "levels": [
+            72,
+            88,
+            132,
+            140,
+            148,
+            164,
+            198
+          ],
+          "lo": 164,
+          "monotonic": true
+        },
+        "TTFT ≤ 5 s": {
+          "hi": 88,
+          "levels": [
+            72,
+            88,
+            132,
+            140,
+            148,
+            164,
+            198
+          ],
+          "lo": 72,
+          "monotonic": true
+        },
+        "chính": {
+          "hi": 148,
+          "levels": [
+            72,
+            88,
+            132,
+            140,
+            148,
+            164,
+            198
+          ],
+          "lo": 140,
+          "monotonic": true
+        },
+        "phụ": {
+          "hi": 72,
+          "levels": [
+            72,
+            88,
+            132,
+            140,
+            148,
+            164,
+            198
+          ],
+          "lo": null,
+          "monotonic": true
+        }
+      },
+      "steady": {
+        "TTFT ≤ 10 s": {
+          "hi": 148,
+          "levels": [
+            72,
+            88,
+            132,
+            140,
+            148,
+            164,
+            198
+          ],
+          "lo": 140,
+          "monotonic": true
+        },
+        "TTFT ≤ 2 s": {
+          "hi": 132,
+          "levels": [
+            72,
+            88,
+            132,
+            140,
+            148,
+            164,
+            198
+          ],
+          "lo": 88,
+          "monotonic": true
+        },
+        "TTFT ≤ 20 s": {
+          "hi": 198,
+          "levels": [
+            72,
+            88,
+            132,
+            140,
+            148,
+            164,
+            198
+          ],
+          "lo": 164,
+          "monotonic": true
+        },
+        "TTFT ≤ 5 s": {
+          "hi": 140,
+          "levels": [
+            72,
+            88,
+            132,
+            140,
+            148,
+            164,
+            198
+          ],
+          "lo": 132,
+          "monotonic": true
+        },
+        "chính": {
+          "hi": 148,
+          "levels": [
+            72,
+            88,
+            132,
+            140,
+            148,
+            164,
+            198
+          ],
+          "lo": 140,
+          "monotonic": true
+        },
+        "phụ": {
+          "hi": 132,
+          "levels": [
+            72,
+            88,
+            132,
+            140,
+            148,
+            164,
+            198
+          ],
+          "lo": 88,
+          "monotonic": true
+        }
+      }
+    },
+    "w2": {
+      "all": {
+        "TTFT ≤ 10 s": {
+          "hi": 28,
+          "levels": [
+            20,
+            26,
+            28,
+            32,
+            40
+          ],
+          "lo": 26,
+          "monotonic": true
+        },
+        "TTFT ≤ 2 s": {
+          "hi": 20,
+          "levels": [
+            20,
+            26,
+            28,
+            32,
+            40
+          ],
+          "lo": null,
+          "monotonic": true
+        },
+        "TTFT ≤ 20 s": {
+          "hi": null,
+          "levels": [
+            20,
+            26,
+            28,
+            32,
+            40
+          ],
+          "lo": 40,
+          "monotonic": true
+        },
+        "TTFT ≤ 5 s": {
+          "hi": 20,
+          "levels": [
+            20,
+            26,
+            28,
+            32,
+            40
+          ],
+          "lo": null,
+          "monotonic": true
+        },
+        "chính": {
+          "hi": 28,
+          "levels": [
+            20,
+            26,
+            28,
+            32,
+            40
+          ],
+          "lo": 26,
+          "monotonic": true
+        },
+        "phụ": {
+          "hi": 20,
+          "levels": [
+            20,
+            26,
+            28,
+            32,
+            40
+          ],
+          "lo": null,
+          "monotonic": true
+        }
+      },
+      "steady": {
+        "TTFT ≤ 10 s": {
+          "hi": null,
+          "levels": [
+            20,
+            26,
+            28,
+            32,
+            40
+          ],
+          "lo": 40,
+          "monotonic": true
+        },
+        "TTFT ≤ 2 s": {
+          "hi": 32,
+          "levels": [
+            20,
+            26,
+            28,
+            32,
+            40
+          ],
+          "lo": 28,
+          "monotonic": true
+        },
+        "TTFT ≤ 20 s": {
+          "hi": null,
+          "levels": [
+            20,
+            26,
+            28,
+            32,
+            40
+          ],
+          "lo": 40,
+          "monotonic": true
+        },
+        "TTFT ≤ 5 s": {
+          "hi": 40,
+          "levels": [
+            20,
+            26,
+            28,
+            32,
+            40
+          ],
+          "lo": 32,
+          "monotonic": true
+        },
+        "chính": {
+          "hi": null,
+          "levels": [
+            20,
+            26,
+            28,
+            32,
+            40
+          ],
+          "lo": 40,
+          "monotonic": true
+        },
+        "phụ": {
+          "hi": 26,
+          "levels": [
+            20,
+            26,
+            28,
+            32,
+            40
+          ],
+          "lo": 20,
+          "monotonic": true
+        }
+      }
+    },
+    "w3": {
+      "all": {
+        "TTFT ≤ 10 s": {
+          "hi": 14,
+          "levels": [
+            8,
+            12,
+            14,
+            18
+          ],
+          "lo": 12,
+          "monotonic": true
+        },
+        "TTFT ≤ 2 s": {
+          "hi": 8,
+          "levels": [
+            8,
+            12,
+            14,
+            18
+          ],
+          "lo": null,
+          "monotonic": true
+        },
+        "TTFT ≤ 20 s": {
+          "hi": null,
+          "levels": [
+            8,
+            12,
+            14,
+            18
+          ],
+          "lo": 18,
+          "monotonic": true
+        },
+        "TTFT ≤ 5 s": {
+          "hi": 12,
+          "levels": [
+            8,
+            12,
+            14,
+            18
+          ],
+          "lo": 8,
+          "monotonic": true
+        },
+        "chính": {
+          "hi": 14,
+          "levels": [
+            8,
+            12,
+            14,
+            18
+          ],
+          "lo": 12,
+          "monotonic": true
+        },
+        "phụ": {
+          "hi": 8,
+          "levels": [
+            8,
+            12,
+            14,
+            18
+          ],
+          "lo": null,
+          "monotonic": true
+        }
+      },
+      "steady": {
+        "TTFT ≤ 10 s": {
+          "hi": 18,
+          "levels": [
+            8,
+            12,
+            14,
+            18
+          ],
+          "lo": 14,
+          "monotonic": true
+        },
+        "TTFT ≤ 2 s": {
+          "hi": 8,
+          "levels": [
+            8,
+            12,
+            14,
+            18
+          ],
+          "lo": null,
+          "monotonic": true
+        },
+        "TTFT ≤ 20 s": {
+          "hi": null,
+          "levels": [
+            8,
+            12,
+            14,
+            18
+          ],
+          "lo": 18,
+          "monotonic": true
+        },
+        "TTFT ≤ 5 s": {
+          "hi": 14,
+          "levels": [
+            8,
+            12,
+            14,
+            18
+          ],
+          "lo": 12,
+          "monotonic": true
+        },
+        "chính": {
+          "hi": 18,
+          "levels": [
+            8,
+            12,
+            14,
+            18
+          ],
+          "lo": 14,
+          "monotonic": true
+        },
+        "phụ": {
+          "hi": 8,
+          "levels": [
+            8,
+            12,
+            14,
+            18
+          ],
+          "lo": null,
+          "monotonic": true
+        }
+      }
+    }
+  },
+  "noise": {},
+  "repeats": 1,
+  "server_starts": [
+    {
+      "cmd": "bash scripts/serve_default.sh /root/results/p09/kv8/server/start-001.log --max-model-len 16384 --kv-cache-dtype fp8 --gpu-memory-utilization 0.95",
+      "log": null,
+      "ready_s": 0.1,
+      "reason": "chưa chạy",
+      "reused_running_server": true,
+      "start_index": 1,
+      "time": "2026-10-13T20:23:29+00:00"
+    }
+  ],
+  "slo": {
+    "tpot_ms": 150,
+    "ttft_ms": 10000
+  },
+  "slo2": {
+    "tpot_ms": 100,
+    "ttft_ms": 2000
+  },
+  "total_unit_hours": 0.8251388888888889,
+  "verdict_window": "all"
+}

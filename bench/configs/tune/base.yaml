@@ -1,0 +1,36 @@
+# Nền chung cho các cấu hình tune GĐ1 (P08). Biến thể: `include: base.yaml` + chỉ ghi phần khác (server.start, mode, mức đo).
+# Mọi thứ khác giống P04/P05 để so cặp được: seed 1001–1003, max(100, 4N) request, cửa sổ "all", SLO chính.
+mode: search
+repeats: 1
+seed_base: 1000
+num_requests: {min: 100, per_user: 4}
+slo: {ttft_ms: 10000, tpot_ms: 150}
+slo2: {ttft_ms: 2000, tpot_ms: 100}
+verdict_window: all
+search: {grid: [8, 16, 32, 64], min_n: 2, max_n: 1024, abs_tol: 2, rel_tol: 0.10, grow: 2.0}
+workloads:
+  w1: {path: data/workloads/w1.jsonl}
+  w2: {path: data/workloads/w2.jsonl}
+  w3: {path: data/workloads/w3.jsonl}
+server:
+  start: "bash scripts/serve_default.sh {log} --max-model-len 16384"
+  stop: "bash scripts/stop_server.sh"
+  base_url: http://localhost:8000
+  model: Qwen/Qwen3-30B-A3B-GPTQ-Int4
+  recompile_restart_s: 10     # compile từ đầu → KV nhỏ hơn (P03) → bật lại trước khi đo
+  restart: never
+client:
+  vllm_cmd: "/root/venv/bin/vllm bench serve"
+  python: /root/venv/bin/python
+  tokenizer: /root/models/Qwen3-30B-A3B-GPTQ-Int4
+  sampling: {temperature: 0, ignore_eos: true}
+warmup: {requests: 4, max_tokens: 16, path: data/workloads/w2.jsonl}
+software:
+  vllm: 0.30.0
+  torch: 2.13.0+cu130
+  model: Qwen/Qwen3-30B-A3B-GPTQ-Int4@9b534e4318b7ebc3c961a839f13eb18b1833f441
+  image: nvidia/cuda:13.0.2-devel-ubuntu22.04
+  env: VLLM_SERVER_DEV_MODE=1
+unit_timeout_s: 3600
+unit_overhead_s: 25
+price_usd_per_h: 0.335        # giá chung 8,770 VND/h (P07)

@@ -1,0 +1,177 @@
+{
+  "config": "bench/configs/tune/p12-seqs.yaml",
+  "goodput": {
+    "w1": {
+      "all": {
+        "TTFT ≤ 10 s": {
+          "hi": 164,
+          "levels": [
+            140,
+            164
+          ],
+          "lo": 140,
+          "monotonic": true
+        },
+        "TTFT ≤ 2 s": {
+          "hi": 140,
+          "levels": [
+            140,
+            164
+          ],
+          "lo": null,
+          "monotonic": true
+        },
+        "TTFT ≤ 20 s": {
+          "hi": null,
+          "levels": [
+            140,
+            164
+          ],
+          "lo": 164,
+          "monotonic": true
+        },
+        "TTFT ≤ 5 s": {
+          "hi": 140,
+          "levels": [
+            140,
+            164
+          ],
+          "lo": null,
+          "monotonic": true
+        },
+        "chính": {
+          "hi": 164,
+          "levels": [
+            140,
+            164
+          ],
+          "lo": 140,
+          "monotonic": true
+        },
+        "phụ": {
+          "hi": 140,
+          "levels": [
+            140,
+            164
+          ],
+          "lo": null,
+          "monotonic": true
+        }
+      },
+      "steady": {
+        "TTFT ≤ 10 s": {
+          "hi": 164,
+          "levels": [
+            140,
+            164
+          ],
+          "lo": 140,
+          "monotonic": true
+        },
+        "TTFT ≤ 2 s": {
+          "hi": 140,
+          "levels": [
+            140,
+            164
+          ],
+          "lo": null,
+          "monotonic": true
+        },
+        "TTFT ≤ 20 s": {
+          "hi": null,
+          "levels": [
+            140,
+            164
+          ],
+          "lo": 164,
+          "monotonic": true
+        },
+        "TTFT ≤ 5 s": {
+          "hi": 164,
+          "levels": [
+            140,
+            164
+          ],
+          "lo": 140,
+          "monotonic": true
+        },
+        "chính": {
+          "hi": 164,
+          "levels": [
+            140,
+            164
+          ],
+          "lo": 140,
+          "monotonic": true
+        },
+        "phụ": {
+          "hi": 140,
+          "levels": [
+            140,
+            164
+          ],
+          "lo": null,
+          "monotonic": true
+        }
+      }
+    }
+  },
+  "noise": {},
+  "repeats": 1,
+  "server_starts": [
+    {
+      "attention_backend": "FLASHINFER",
+      "cmd": "bash scripts/serve_default.sh /root/results/p09/p12-seqs/server/start-001.log --max-model-len 16384 --kv-cache-dtype fp8 --gpu-memory-utilization 0.95 --max-num-seqs 133",
+      "init_engine_s": 98.48,
+      "kv_cache_dtype": "fp8",
+      "kv_cache_gib": 3.31,
+      "kv_cache_tokens": 72368,
+      "load_weights_s": 24.28,
+      "log": "server/start-001.log",
+      "max_concurrency_at": [
+        16384,
+        4.42
+      ],
+      "max_num_batched_tokens": 2048,
+      "moe_backend": "MARLIN",
+      "ready_s": 182.5,
+      "reason": "chưa chạy",
+      "reused_running_server": false,
+      "start_index": 1,
+      "time": "2026-10-13T21:26:46+00:00",
+      "torch_compile_s": 64.21
+    },
+    {
+      "attention_backend": "FLASHINFER",
+      "cmd": "bash scripts/serve_default.sh /root/results/p09/p12-seqs/server/start-002.log --max-model-len 16384 --kv-cache-dtype fp8 --gpu-memory-utilization 0.95 --max-num-seqs 133",
+      "init_engine_s": 29.86,
+      "kv_cache_dtype": "fp8",
+      "kv_cache_gib": 4.1,
+      "kv_cache_tokens": 89488,
+      "load_weights_s": 25.37,
+      "log": "server/start-002.log",
+      "max_concurrency_at": [
+        16384,
+        5.46
+      ],
+      "max_num_batched_tokens": 2048,
+      "moe_backend": "MARLIN",
+      "ready_s": 113.7,
+      "reason": "bỏ lần khởi động compile từ đầu",
+      "reused_running_server": false,
+      "start_index": 2,
+      "time": "2026-10-13T21:28:42+00:00",
+      "torch_compile_s": 1.27
+    }
+  ],
+  "slo": {
+    "tpot_ms": 150,
+    "ttft_ms": 10000
+  },
+  "slo2": {
+    "tpot_ms": 100,
+    "ttft_ms": 2000
+  },
+  "total_unit_hours": 0.11883611111111111,
+  "verdict_window": "all"
+}

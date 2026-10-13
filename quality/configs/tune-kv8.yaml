@@ -1,0 +1,14 @@
+# P09 — cổng chất lượng cho biến thể kv8 (KV FP8 + gpu_memory_utilization 0.95), plan docs/gd1-vllm-tune/09-tang-cho-kv/plan.md bước 3.
+# Chạy trên máy thuê (trong remote_multi.sh):  quality quality/configs/tune-kv8.yaml /root/results/p09/quality-kv8
+# Phân tích local:  .venv/bin/python quality/analyze.py --gate results/gd1/06-chat-luong-baseline/20261013-p06 \
+#                       results/gd1/06-chat-luong-baseline/20261013-p06r2 results/gd1/09-tang-cho-kv/<run>/quality-kv8
+# Tên đơn vị giữ y như P06 lần 1 → `analyze.py --gate` ghép đúng cặp. Teacher forcing chạy trên văn bản tham chiếu CỦA BASELINE
+# (source_path) → mọi cấu hình teacher-force cùng một văn bản; thư mục đó phải được đẩy lên máy thuê (chunks/ chỉ có ở local).
+include: p06.yaml
+# Teacher forcing (ref-tf-c8-r1) chạy riêng ở tune-kv8-tf.yaml với 0.92: ở 0.95 vLLM hết bộ nhớ khi tính prompt_logprobs (P09, challenges #7).
+units:
+  - {id: ref-gen-c8-r1, kind: gen, set: reference, concurrency: 8, max_tokens: 256, logprobs: 20}
+  - {id: finqa-c32-r1, kind: gen, set: finqa_rag, concurrency: 32, max_tokens: 768, logprobs: 0}
+  - {id: lm-mmlu-pro, kind: lmeval, tasks: mmlu_pro, concurrency: 32, samples: data/quality/mmlu_pro_samples.json}
+server:
+  start: "bash scripts/serve_default.sh {log} --max-model-len 16384 --kv-cache-dtype fp8 --gpu-memory-utilization 0.95"
